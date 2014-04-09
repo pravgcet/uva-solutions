@@ -6,34 +6,34 @@ using namespace std;
 
 int p, q, r, s, t, u;
 
-double calc(double x) {
+double f(double x) {
     return p * exp(-x) + q * sin(x) + r * cos(x) + s * tan(x) + t * x * x + u;
+}
+
+double fd(double x){
+  return -p*exp(-x) + q*cos(x) - r*sin(x) + s/(cos(x)*cos(x)) + 2*t*x;
+}
+
+double newton(){
+  if (f(0)==0) return 0;
+  int r = 5000;
+  int r1;
+  for (double x=0.5; ;) {
+    double x1 = x - f(x)/fd(x);
+    r1 = round(x1 * 10000);
+    if (r1 == r) return x;
+    x = x1;
+    r = r1;
+  }
 }
 
 int main() {
     while (scanf("%d%d%d%d%d%d", &p, &q, &r, &s, &t, &u) == 6) {
-        double r = 1.0d;
-        double l = 0.0d;
-        double lv = calc(l);
-        double rv = calc(r);
-        if (lv * rv > 0) {
+        if (f(0) * f(1) > 0) {
             printf("No solution\n");
             continue;
         }
-        double x;
-        while (abs(r - l) > 1e-7) {
-            x = (r + l) / 2;
-            double v = calc(x);
-            if (v * lv <= 0) {
-                rv = v;
-                r = x;
-            } else {
-                lv = v;
-                l = x;
-            }
-        }
-        // x = (r + l) / 2;
-        printf("%.4lf\n", x);
+        printf("%.4lf\n", newton());
     }
     return 0;
 }
