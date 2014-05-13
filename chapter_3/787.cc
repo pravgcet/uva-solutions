@@ -4,7 +4,7 @@
 using namespace std;
 
 int main() {
-    long long v[101];
+    long long v[200];
     while (scanf("%lld", v) == 1) {
         int n = 1;
         while (true) {
