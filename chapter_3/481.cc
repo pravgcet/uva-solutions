@@ -22,12 +22,14 @@ int main() {
             continue;
         }
         if (it == l.end() - 1) {
-            ref[i] = ref[best_i];
+            ref[i] = lr.size() <= 1 ? -1 : lr[lr.size() - 2];;
             best_i = i;
         }
         if (a[i] < *it) {
             *it = a[i];
-            lr[it - l.begin()] = i;
+            int p = it - l.begin();
+            lr[p] = i;
+            ref[i] = p == 0 ? -1 : lr[p-1];
         }
     }
     printf("%lu\n-\n", l.size());
