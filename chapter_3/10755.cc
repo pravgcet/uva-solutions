@@ -23,22 +23,20 @@ int main() {
             }
             int v;
             cin >> q[i][j][k];
-            q[i][j][k] += q[i-1][j][k] + q[i][j-1][k] + q[i][j][k-1];
-            q[i][j][k] += q[i-1][j-1][k-1];
-            q[i][j][k] -= q[i-1][j-1][k] + q[i-1][j][k-1] + q[i][j-1][k-1];
+            q[i][j][k] += q[i-1][j][k] + q[i][j-1][k] - q[i-1][j-1][k];
         }
         long long m = q[1][1][1];
         for (int i = 0; i < a; i++)
         for (int j = 0; j < b; j++)
-        for (int k = 0; k < c; k++)
         for (int x = i + 1; x <= a; x++)
-        for (int y = j + 1; y <= b; y++)
-        for (int z = k + 1; z <= c; z++) {
-            long long t = q[x][y][z];
-            t -= q[i][j][k];
-            t -= q[i][y][z] + q[x][j][z] + q[x][y][k];
-            t += q[i][j][z] + q[i][y][k] + q[x][j][k];
-            m = max(m, t);
+        for (int y = j + 1; y <= b; y++) {
+            long long s = 0;
+            for (int k = 1; k <= c; k++) {
+                long long t = q[x][y][k] - q[i][y][k] - q[x][j][k] + q[i][j][k];
+                s += t;
+                m = max(m, s);
+                if (s < 0) s = 0;
+            }
         }
         printf("%lld\n", m);
     }
