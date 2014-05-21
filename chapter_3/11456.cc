@@ -29,24 +29,39 @@ int main() {
     while (tcc--) {
         int n;
         cin >> n;
-        vector<int> w(n);
+        vector<int> weights(n);
 
         for (int i = 0; i < n; i++) {
-            cin >> w[i];
+            cin >> weights[i];
         }
 
-        reverse(w.begin(), w.end());
+        reverse(weights.begin(), weights.end());
 
-        vector<int> lds(n, 1);
-        vector<int> lis(n ,1);
+        //vector<int> lds(n, 1);
+        //vector<int> lis(n ,1);
+        vector<int> inc, dec;
 
         int best = 0;
         for (int i = 0; i < n; i++) {
-            for (int j = 0; j < i; j++) {
-                if (w[j] > w[i]) lds[i] = max(lds[i], lds[j] + 1);
-                if (w[j] < w[i]) lis[i] = max(lis[i], lis[j] + 1);
+            int length = -1;
+            int w = weights[i];
+            auto it = lower_bound(inc.begin(), inc.end(), w);
+            if (it == inc.end()) {
+                inc.push_back(w);
+                it = inc.end() - 1;
             }
-            best = max(best, lis[i] + lds[i] - 1);
+            length += it - inc.begin() + 1;
+            if (w < *it) *it = w;
+
+            w = -w;
+            it = lower_bound(dec.begin(), dec.end(), w);
+            if (it == dec.end()) {
+                dec.push_back(w);
+                it = dec.end() - 1;
+            }
+            if (w < *it) *it = w;
+            length += it - dec.begin() + 1;
+            best = max(best, length);
         }
         cout << best << endl;
     }
