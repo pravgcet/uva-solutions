@@ -19,35 +19,29 @@
 
 using namespace std;
 
-const int MAX_COUNT = 100;
-
-int memo[10201][MAX_COUNT];
-int price[MAX_COUNT], value[MAX_COUNT];
-
-int find(int sum, int k) {
-    if (sum <= 0 || k < 0) return 0;
-    int &v = memo[sum][k];
-    if (v == -1) {
-        if (sum >= price[k]) {
-            v = value[k] + find(sum - price[k], k - 1);
-        }
-        v = max(v, find(sum, k - 1));
-    }
-    return v;
-}
-
 int main() {
     int m, n;
-    int count = 0;
+    int best[10201];
+    // int count = 0;
     while (cin >> m >> n) {
-        count++;
-        cerr << count << " " << m << " " << n << endl;
+        // count++;
+        // cerr << count << " " << m << " " << n << endl;
+        fill(&best[0], &best[10201], -1);
+        best[0] = 0;
         for (int i = 0; i < n; i++) {
-            cin >> price[i] >> value[i];
+            int p;
+            int v;
+            cin >> p >> v;
+            for (int j = m + 200 - p; j >= 0; j--) {
+                if (best[j] == -1) continue;
+                best[j + p] = max(best[j + p], best[j] + v);
+            }
         }
-        if (m > 2000 - 200) m += 200;
-        // clear
-        fill(&memo[0][0], &memo[10201][0], -1);
-        cout << find(m, n - 1) << endl;
+        int answer = 0;
+        for (int i = 0; i <= m + 200; i++) {
+            if (i <= 2000 && i > m) continue;
+            answer = max(answer, best[i]);
+        }
+        cout << answer << endl;
     }
 }
