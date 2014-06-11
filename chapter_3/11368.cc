@@ -19,50 +19,38 @@
 
 using namespace std;
 
-struct doll {
-    int w, h;
-    bool used;
-    bool operator < (const doll &o) const {
-        return w < o.w && h < o.h;
-    }
-};
+using vi = vector<int>;
+using ii = pair<int,int>;
+using ll = long long;
+using llu = unsigned long long;
+
+const int MAX = 20002;
 
 int main() {
     int tcc;
     cin >> tcc;
+    int counts[MAX];
     while (tcc--) {
         int n;
         cin >> n;
-        vector<doll> dolls;
+        vector<ii> dolls;
         while (n--) {
-            doll d;
-            cin >> d.h >> d.w;
-            d.used = false;
+            ii d;
+            cin >> d.first >> d.second;
+            d.second = -d.second;
             dolls.push_back(d);
         }
         sort(dolls.begin(), dolls.end());
-        int to_pick = dolls.size();
-        int count = 0;
-        while (to_pick) {
-            count++;
-            int i;
-            for (i = 0; i < dolls.size(); i++) {
-                if (!dolls[i].used) break;
-            }
-            dolls[i].used = true;
-            to_pick--;
-            int j = i + 1;
-            while (j < dolls.size()) {
-                if (dolls[i].h < dolls[j].h &&
-                    dolls[i].w < dolls[j].w
-                    && !dolls[j].used) {
-                    i = j;
-                    dolls[i].used = true;
-                    to_pick--;
-                }
-                j++;
+        fill(counts, counts + MAX, 0);
+        vi lis;
+        for (auto d : dolls) {
+            auto it = upper_bound(lis.begin(), lis.end(), d.second);
+            if (it == lis.end()) {
+                lis.push_back(d.second);
+            } else {
+                *it = d.second;
             }
         }
-        cout << count << endl;
+        cout << lis.size() << endl;
     }
 }
