@@ -21,7 +21,7 @@ using namespace std;
 using vi = vector<int>;
 
 struct node {
-  int discovered, low;
+  int age, low;
   bool visited;
   int parent = -1;
   bool articulation;
@@ -33,26 +33,33 @@ int T = 0;
 void mark_adjusted(vector<node> &G, int from) {
   node &x = G[from];
   x.visited = true;
-  x.discovered = x.low = ++T;
+  x.age = x.low = ++T;
   int children = 0;
   for (auto i : x.adjusted) {
     node &y = G[i];
 
     if (y.visited) {
-      if (i == x.parent) continue;
-      x.low = min(x.low, y.low);
+      if (i != x.parent) x.low = min(x.low, y.age);
       continue;
     }
-    ++children;
     y.parent = from;
     mark_adjusted(G, i);
     x.low = min(x.low, y.low);
 
     if (x.parent == -1) {
-      x.articulation = children > 1;
+      ++children;
+      x.articulation |= children > 1;
     } else {
-      x.articulation = y.low >= x.discovered;
+      x.articulation |= y.low >= x.age;
     }
+  }
+}
+
+void dfs(vector<node> &G, int start) {
+  G[start].visited = true;
+  for (auto i : G[start].adjusted) {
+    if (G[i].visited) continue;
+    dfs(G, i);
   }
 }
 
@@ -79,6 +86,17 @@ int main() {
     for (auto n : G) {
       if (n.articulation) ++count;
     }
+    // int count = 0;
+    // for (int i = 0; i < G.size(); ++i) {
+    //   for (auto &n : G) n.visited = false;
+    //   G[i].visited = true;
+    //   dfs(G, (i + 1) % G.size());
+    //   for (auto n : G) {
+    //     if (n.visited) continue;
+    //     ++count;
+    //     break;
+    //   }
+    // }
     cout << count << endl;
   }
 }
