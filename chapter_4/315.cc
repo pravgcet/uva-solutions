@@ -37,12 +37,13 @@ void mark_adjusted(vector<node> &G, int from) {
   int children = 0;
   for (auto i : x.adjusted) {
     node &y = G[i];
+
     if (y.visited) {
       if (i == x.parent) continue;
-      x.low = min(x.low, y.discovered);
+      x.low = min(x.low, y.low);
       continue;
     }
-    children++;
+    ++children;
     y.parent = from;
     mark_adjusted(G, i);
     x.low = min(x.low, y.low);
@@ -59,11 +60,15 @@ int main() {
   int n;
   while (cin >> n, n) {
     vector<node> G(n);
-    int f;
-    while (cin >> f, f) {
+    string s;
+    while (getline(cin, s)) {
+      istringstream ss(s);
+      int f;
+      if (!(ss >> f)) continue;
+      if (f == 0) break;
       --f;
       int t;
-      while (cin.peek() != '\n' && cin >> t) {
+      while (ss >> t) {
         --t;
         G[f].adjusted.push_back(t);
         G[t].adjusted.push_back(f);
