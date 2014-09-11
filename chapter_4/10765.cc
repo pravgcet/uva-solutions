@@ -21,11 +21,13 @@
 using namespace std;
 struct node;
 using ii = pair<int, int>;
-using p_node = shared_ptr<node>;
-using Graph = vector<p_node>;
+using pnode = shared_ptr<node>;
+using Graph = vector<pnode>;
+
+int t = 0;
 
 struct node {
-  p_node parent;
+  pnode parent;
   int split;
   bool visited;
   int bucket;
@@ -33,13 +35,35 @@ struct node {
   Graph adjusted;
 };
 
+void dfs(pnode &u) {
+  u->visited = true;
+  ++t;
+  u->age = u->low = t;
+  // if root is alone then component count will decrease
+  if (!u->parent) u->split = -1;
+  for (auto v : u->adjusted) {
+    if (v->visited) {
+      if (v != u->parent) u->low = min(u->low, v->age);
+      continue;
+    }
+    v->parent = u;
+    dfs(v);
+    u->low = min(u->low, v->low);
+    if (u->parent) {
+      if (v->low >= u->age) u->split++;
+    } else {
+      u->split++;
+    }
+  }
+}
+
 int main() {
   int m, n;
   while (cin >> n >> m, n) {
     Graph g(n);
-    components.clear();
-    components.resize(n);
+
     for (int i = 0; i < n; ++i) g[i] = make_shared<node>();
+
     int a, b;
     while (cin >> a >> b, a != -1) {
       g[a]->adjusted.push_back(g[b]);
@@ -48,7 +72,17 @@ int main() {
 
     vector<ii> result;
 
-    result.push_back(make_pair(i, count + k - 1));
+    int components = 0;
+
+    for (auto x : g) {
+      if (x->visited) continue;
+      ++components;
+      dfs(x);
+    }
+
+    for (int i = 0; i < g.size(); ++i) {
+      result.push_back(make_pair(i, g[i]->split + components));
+    }
 
     sort(result.begin(), result.end(),
       [](const ii &a, const ii &b) {
