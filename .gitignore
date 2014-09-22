@@ -5,6 +5,7 @@
 !**.cpp
 !**.cc
 !**.in
+!**.java
 !**.sample_out
 !*/
 !.gitignore
