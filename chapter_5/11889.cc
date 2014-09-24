@@ -59,7 +59,41 @@ vector<ii> divisors(int n) {
   return r;
 }
 
-ll gcd(ll a, ll b) {
+int get_b(int a, int c) {
+  auto da = divisors(a);
+  auto dc = divisors(c);
+  vector<ii> db;
+  auto ia = da.begin();
+  auto ic = dc.begin();
+  while (ia != da.end() && ic != dc.end()) {
+    if (ia->first == ic->first) {
+      if (ia->second > ic->second) {
+        break;
+      }
+      if (ia->second < ic->second) {
+        db.push_back(*ic);
+      }
+      ++ia;
+      ++ic;
+      continue;
+    }
+    if (ia->first < ic->first) {
+      ++ia;
+      continue;
+    }
+    db.push_back(*ic++);
+  }
+
+  while (ic != dc.end()) db.push_back(*ic++);
+
+  int b = 1;
+  for (auto d : db) {
+   for (int i = 0; i < d.second; ++i) b *= d.first;
+  }
+  return b;
+}
+
+int gcd(int a, int b) {
   if (b == 0) return a;
   return gcd(b, a % b);
 }
@@ -71,19 +105,11 @@ int main() {
   while (tcc--) {
     ll a, c;
     cin >> a >> c;
-    if (c % a != 0) {
-      printf("NO SOLUTION\n");
+    int b = get_b(a, c);
+    if (a * b / gcd(a, b) == c) {
+      printf("%d\n", b);
     } else {
-      ll t = (c / a);
-      ll b = t;
-      while (true) {
-        ll g = gcd(a, b);
-        if (a * b / g == c) {
-          printf("%lld\n", b);
-          break;
-        }
-        b += t;
-      }
+      printf("NO SOLUTION\n");
     }
   }
 }
