@@ -67,3 +67,5 @@ int main() {
     printf("Case %d: %d\n", tc, lis(iq));
   }
 }
+
+// time : 1:13:00 finding optimal solution
