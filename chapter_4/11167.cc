@@ -35,9 +35,10 @@ using graph = vector<pnode>;
 
 struct node {
   bool visited;
+  int age;
   int index;
   vector<pedge> edges;
-  pedge back;
+  vector<pedge> back;
 };
 
 struct edge {
@@ -56,8 +57,14 @@ void connect(pnode a, pnode b, int w) {
 }
 
 int adjust(pedge e, int d) {
-  if (!e) return d;
-  d = adjust(e->from->back, min(d, e->w));
+  int sum = 0;
+  d = min(d, e->w);
+  if (e->from->back.empty()) sum = d;
+  for (auto i : e->from->back) {
+    sum += adjust(i, d - sum);
+    if (sum == d) break;
+  }
+  d = sum;
   e->w -= d;
   e->opp->w += d;
   return d;
@@ -66,22 +73,28 @@ int adjust(pedge e, int d) {
 int max_flow(pnode source, pnode sink, graph &g) {
   int a = 0;
   while (true) {
-    for (auto u : g) u->visited = false;
+    for (auto u : g) {
+      u->age = INF;
+      u->back.clear();
+    }
     queue<pnode> q;
-    q.push(source); source->visited = true;
-    while (!(q.empty() || sink->visited)) {
+    q.push(source); source->age = 0;
+    while (!q.empty()) {
       auto u = q.front(); q.pop();
       for (auto e : u->edges) {
         auto v = e->to;
-        if (e->w == 0 || v->visited) continue;
-        v->visited = true;
-        v->back = e;
-        q.push(v);
+        if (e->w == 0 || v->age <= u->age) continue;
+        v->back.push_back(e);
+        if (v->age == INF) {
+          v->age = u->age + 1;
+          q.push(v);
+        }
       }
     }
-    if (!sink->visited) break;
-    //cerr << a << endl;
-    a += adjust(sink->back, INF);
+    if (sink->age == INF) break;
+    for (auto e : sink->back) {
+      a += adjust(e, INF);
+    }
   }
   return a;
 }
@@ -89,8 +102,9 @@ int max_flow(pnode source, pnode sink, graph &g) {
 int main() {
   int n, m, i, j, tc, sum, a, b, v;
   tc = 0;
-  while (cin >> n, n) {
-    cin >> m;
+  while (scanf("%d", &n), n) {
+    cerr << "read" << endl;
+    scanf("%d", &m);
     tc++;
     graph g;
     auto source = make_shared<node>();
@@ -101,8 +115,9 @@ int main() {
     g.emplace_back(sink);
     vector<pnode> times(50001);
     sum = 0;
+    cerr << "connect" << endl;
     for (i = 0; i < n; i++) {
-      cin >> v >> a >> b;
+      scanf("%d %d %d", &v, &a, &b);
       sum += v;
       auto u = make_shared<node>();
       u->index = -1;
@@ -119,6 +134,7 @@ int main() {
         connect(u, v, 1);
       }
     }
+    cerr << "solve" << endl;
     printf("Case %d: ", tc);
     if (max_flow(source, sink, g) == sum) {
       printf("Yes\n");
