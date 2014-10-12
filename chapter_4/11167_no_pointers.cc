@@ -34,7 +34,10 @@ using pedge = shared_ptr<edge>;
 using graph = vector<pnode>;
 
 struct node {
+  bool visited;
   int age;
+  int index;
+  bool monkey;
   vector<edge> edges;
   vector<int> back;
 };
@@ -113,26 +116,25 @@ int max_flow(int source, int sink) {
 int main() {
   int n, m, i, j, tc, sum, a, b, v;
   tc = 0;
-  M.resize(MAX);
   while (scanf("%d", &n), n) {
-    //cerr << "read" << endl;
+    cerr << "read" << endl;
     scanf("%d", &m);
     tc++;
+    M.clear();
+    M.resize(MAX);
     int sink = 0;
     int source = 1;
-    for (i = 0; i < MAX; i++) {
-      M[i].edges.clear();
-    }
+    for (i = 0; i < MAX; i++) M[i].index = i;
     for (i = 2 + n; i < MAX; i++) connect(i, sink, m);
     sum = 0;
-    //cerr << "connect" << endl;
+    cerr << "connect" << endl;
     for (i = 0; i < n; i++) {
       scanf("%d %d %d", &v, &a, &b);
       sum += v;
       connect(source, i + 2, v);
       for (j = a; j < b; j++) connect(i + 2, j + 2 + n, 1);
     }
-    //cerr << "solve" << endl;
+    cerr << "solve" << endl;
     printf("Case %d: ", tc);
     if (max_flow(source, sink) == sum) {
       printf("Yes\n");
