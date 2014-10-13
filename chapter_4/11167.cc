@@ -34,78 +34,53 @@ using pedge = shared_ptr<edge>;
 using graph = vector<pnode>;
 
 struct node {
-  int age;
-  vector<edge> edges;
-  vector<int> back;
+  bool visited;
+  int time_start, time_end, t;
+  vector<pedge> edges;
+  pedge back;
 };
 
 struct edge {
-  int to;
-  int opp_index;
-  int flow;
+  int w;
+  pedge opp;
+  pnode from, to;
 };
 
-const int MAX = 51000;
-
-vector<node> M;
-
-void connect(int a, int b, int w) {
-  edge ea, eb;
-  ea.to = b;
-  ea.opp_index = M[b].edges.size();
-  ea.flow = w;
-
-  eb.to = a;
-  eb.opp_index = M[a].edges.size();
-  eb.flow = 0;
-
-  M[a].edges.push_back(ea);
-  M[b].edges.push_back(eb);
+void connect(pnode a, pnode b, int w) {
+  auto ea = make_shared<edge>();
+  auto eb = make_shared<edge>();
+  ea->from = a; ea->to = b; ea->opp = eb; ea->w = w;
+  eb->from = b; eb->to = a; eb->opp = ea; eb->w = 0;
+  a->edges.emplace_back(ea);
+  b->edges.emplace_back(eb);
 }
 
-int adjust(int it, int ie, int d) {
-  int sum = 0;
-  auto &u = M[it];
-  auto &e = u.edges[ie];
-  auto &v = M[e.to];
-  d = min(d, e.flow);
-  if (u.back.empty()) sum = d;
-  for (auto i : u.back) {
-    sum += adjust(u.edges[i].to, u.edges[i].opp_index, d - sum);
-    if (sum == d) break;
-  }
-  d = sum;
-  e.flow -= d;
-  v.edges[e.opp_index].flow += d;
+int adjust(pedge e, int d) {
+  if (!e) return d;
+  d = adjust(e->from->back, min(d, e->w));
+  e->w -= d;
+  e->opp->w += d;
   return d;
 }
 
-int max_flow(int source, int sink) {
+int max_flow(pnode source, pnode sink, graph &g) {
   int a = 0;
   while (true) {
-    for (auto &u : M) {
-      u.age = INF;
-      u.back.clear();
-    }
-    queue<int> q;
-    q.emplace(source); M[source].age = 0;
-    while (!q.empty()) {
-      auto &u = M[q.front()]; q.pop();
-      for (auto e : u.edges) {
-        auto &v = M[e.to];
-        if (e.flow == 0 || v.age <= u.age) continue;
-        if (v.age == INF) {
-          v.age = u.age + 1;
-          q.push(e.to);
-        }
-        v.back.push_back(e.opp_index);
+    for (auto u : g) u->visited = false;
+    queue<pnode> q;
+    q.push(source); source->visited = true;
+    while (!(q.empty() || sink->visited)) {
+      auto u = q.front(); q.pop();
+      for (auto e : u->edges) {
+        auto v = e->to;
+        if (e->w == 0 || v->visited) continue;
+        v->visited = true;
+        v->back = e;
+        q.push(v);
       }
     }
-    if (M[sink].age == INF) break;
-    for (auto i : M[sink].back) {
-      auto &e = M[sink].edges[i];
-      a += adjust(e.to, e.opp_index, INF);
-    }
+    if (!sink->visited) break;
+    a += adjust(sink->back, INF);
   }
   return a;
 }
@@ -113,48 +88,90 @@ int max_flow(int source, int sink) {
 int main() {
   int n, m, i, j, tc, sum, a, b, v;
   tc = 0;
-  M.resize(MAX);
-  while (scanf("%d", &n), n) {
-    //cerr << "read" << endl;
-    scanf("%d", &m);
+  while (cin >> n, n) {
+    cin >> m;
     tc++;
-    int sink = 0;
-    int source = 1;
-    for (i = 0; i < MAX; i++) {
-      M[i].edges.clear();
-    }
-    for (i = 2 + n; i < MAX; i++) connect(i, sink, m);
+    graph g;
+    auto source = make_shared<node>(); g.emplace_back(source);
+    source->time_start = -2;
+    auto sink = make_shared<node>(); g.emplace_back(sink);
+    sink->time_start = -2;
+    vector<tuple<int, pnode, bool>> events;
     sum = 0;
-    //cerr << "connect" << endl;
     for (i = 0; i < n; i++) {
-      scanf("%d %d %d", &v, &a, &b);
+      cin >> v >> a >> b;
       sum += v;
-      connect(source, i + 2, v);
-      for (j = a; j < b; j++) connect(i + 2, j + 2 + n, 1);
+      auto u = make_shared<node>(); g.emplace_back(u);
+      connect(source, u, v);
+      u->time_start = -1;
+      events.emplace_back(a, u, true);
+      events.emplace_back(b, u, false);
     }
-    //cerr << "solve" << endl;
-    printf("Case %d: ", tc);
-    if (max_flow(source, sink) == sum) {
-      printf("Yes\n");
-      for (i = 0; i < n; i++) {
-        auto &u = M[i + 2];
-        vector<ii> t;
-        auto p = u.edges.begin();
-        auto e = u.edges.end();
-        while (p != e) {
-          if (p->to != source && p->flow == 0) {
-            t.emplace_back(p->to - n - 2, 0);
-            auto next = p;
-            while (next != e && next->to != source && next->flow == 0) {
-              p = next;
-              next++;
-            }
-            t.back().second = p->to - n - 2 + 1;
-          }
-          p++;
+    sort(events.begin(), events.end());
+
+    auto it = events.begin();
+    set<pnode> active;
+    int start = -1;
+    while (it != events.end()) {
+      start = get<0>(*it);
+      auto next = it;
+      while (next != events.end() && get<0>(*next) == start) {
+        it = next;
+        if (get<2>(*it)) {
+          active.insert(get<1>(*it));
+        } else {
+          active.erase(get<1>(*it));
         }
-        printf("%lu", t.size());
-        for (auto k : t) printf(" (%d,%d)", k.first, k.second);
+        next++;
+      }
+      if (next == events.end()) break;
+      int end = get<0>(*next);
+      auto u = make_shared<node>(); g.emplace_back(u);
+      u->time_start = start;
+      u->time_end = end;
+      u->t = start;
+      int w = end - start;
+      connect(u, sink, w * m);
+      for (auto v : active) {
+        connect(v, u, w);
+      }
+      it = next;
+    }
+
+    printf("Case %d: ", tc);
+    if (max_flow(source, sink, g) == sum) {
+      printf("Yes\n");
+      for (auto u : g) {
+        if (u->time_start != -1) continue;
+        vector<ii> raw;
+        for (auto e : u->edges) {
+          if (e->to->time_start < 0 || e->opp->w == 0) continue;
+          auto v = e->to;
+          int y = v->t + e->opp->w;
+          if (y > v->time_end) {
+            raw.emplace_back(v->t, v->time_end);
+            v->t = v->time_start;
+            y -= (v->time_end - v->time_start);
+          }
+          raw.emplace_back(v->t, y);
+          v->t = y;
+          if (v->t == v->time_end) v->t = v->time_start;
+        }
+        sort(raw.begin(), raw.end());
+        vector<ii> answer;
+        auto i = raw.begin();
+        while (i != raw.end()) {
+          int a = i->first;
+          auto j = i + 1;
+          while (j != raw.end() && j->first == i->second) {
+            i = j;
+            j++;
+          }
+          answer.emplace_back(a, i->second);
+          i++;
+        }
+        printf("%lu", answer.size());
+        for (auto k : answer) printf(" (%d,%d)", k.first, k.second);
         printf("\n");
       }
     } else {
