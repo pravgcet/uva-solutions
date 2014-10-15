@@ -31,6 +31,7 @@ int main() {
   int n, s, tc = 0;
   while (cin >> n, n) {
     tc++;
+    s = 0;
     vi v(n);
     while (n--) {
       cin >> v[n];
