@@ -5,3 +5,4 @@ reasons of WA
 591 - initialization of variable
 10203 - output formatting
 10596 - forget to check other cases (problem is wierd still)
+10349 - wrong approach
