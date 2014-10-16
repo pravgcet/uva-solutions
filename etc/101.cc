@@ -16,13 +16,15 @@ int main() {
     piles[i].push(i);
     pos[i] = i;
   }
-  string op;
-  while (cin >> op) {
-    if (op == "quit") break;
+  string opa;
+  while (cin >> opa) {
+    if (opa == "quit") break;
     stack<int> move;
-    int a;
-    cin >> a;
-    if (op == "move") {
+    int a, b;
+    string opb;
+    cin >> a >> opb >> b;
+    if (pos[a] == pos[b]) continue;
+    if (opa == "move") {
       while (true) {
         int t = piles[pos[a]].top();
         if (t == a) break;
@@ -37,9 +39,7 @@ int main() {
       move.push(t);
       if (t == a) break;
     }
-    int b;
-    cin >> op >> b;
-    if (op == "onto") {
+    if (opb == "onto") {
       while (true) {
         int t = piles[pos[b]].top();
         if (t == b) break;
