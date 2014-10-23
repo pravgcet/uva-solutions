@@ -12,3 +12,4 @@ reasons of WA
 1056 - wrong approach
 382 - hasty read of output format
 673 - input format
+543 - not sure (RE) looks like iterator arithmetics
