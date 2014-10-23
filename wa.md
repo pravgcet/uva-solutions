@@ -11,3 +11,4 @@ reasons of WA
 10913 - off by one of state space
 1056 - wrong approach
 382 - hasty read of output format
+673 - input format
