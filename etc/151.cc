@@ -10,24 +10,15 @@ const int INF = numeric_limits<int>::max();
 int main() {
   int n;
   while (cin >> n, n) {
-    bitset<100> b;
     for (int i = 1; ; i++) {
-      cerr << i << endl;
-      b.reset();
-      int s = 0;
-      int p = 0;
+      queue<int> q;
+      for (int j = 1; j <= n; j++) q.push(j);
       while (true) {
-        while (b[p]) {
-          p++; p %= n;
-        }
-        b[p] = true;
-        s++;
-        if (p == 12) break;
-        for (int j = 0; j < i; j++) {
-          while (b[p]) { p++; p %= n; }
-        }
+        if (q.front() == 13) break;
+        q.pop();
+        for (int j = 1; j < i; j++) { q.push(q.front()); q.pop(); }
       }
-      if (s == n) {
+      if (q.size() == 1) {
         cout << i << endl;
         break;
       }
