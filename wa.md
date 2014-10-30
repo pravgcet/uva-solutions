@@ -13,3 +13,4 @@ reasons of WA
 382 - hasty read of output format
 673 - input format
 543 - not sure (RE) looks like iterator arithmetics
+11526 - integer overflow
