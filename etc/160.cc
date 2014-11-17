@@ -38,7 +38,7 @@ int main() {
   int n;
   while (cin >> n, n) {
     printf("%3d! =", n);
-    for (int i = 0; i < factorization[n].size(); i++) {
+    for (llu i = 0; i < factorization[n].size(); i++) {
       if (factorization[n][i] == 0) break;
       if (i == 15) printf("\n      ");
       printf("%3d", factorization[n][i]);
