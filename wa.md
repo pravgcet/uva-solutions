@@ -17,3 +17,4 @@ reasons of WA
 11176 - wrong approach (TLE)
 11101 - too optimistic bound
 763 - not careful branching
+11955 - number overflow
