@@ -18,3 +18,4 @@ reasons of WA
 11101 - too optimistic bound
 763 - not careful branching
 11955 - number overflow
+10878 - output format
