@@ -19,3 +19,4 @@ reasons of WA
 763 - not careful branching
 11955 - number overflow
 10878 - output format
+343 - off by one in input
