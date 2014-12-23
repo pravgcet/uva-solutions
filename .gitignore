@@ -6,6 +6,7 @@
 !**.cc
 !**.in
 !**.java
+!**.iml
 !**.sample_out
 !*/
 !.gitignore
