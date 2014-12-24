@@ -20,3 +20,4 @@ reasons of WA
 11955 - number overflow
 10878 - output format
 343 - off by one in input
+389 - java turns out to be too slow, ingnored PE in c++
