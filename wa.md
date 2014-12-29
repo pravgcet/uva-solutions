@@ -21,3 +21,4 @@ reasons of WA
 10878 - output format
 343 - off by one in input
 389 - java turns out to be too slow, ingnored PE in c++
+10235 - hasty ready of statement
