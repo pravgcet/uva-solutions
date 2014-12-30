@@ -22,3 +22,4 @@ reasons of WA
 343 - off by one in input
 389 - java turns out to be too slow, ingnored PE in c++
 10235 - hasty ready of statement
+10139 - wrong solution
