@@ -23,6 +23,7 @@ void sieve() {
 
 void check(int f, int t, ivi p, int n, int c) {
   //cerr << f << " " << t << " " << *p << " " << n << " " << c << endl;
+
   if (t == 1) {
     if (c > best_c || (c == best_c && n < best_n)) {
       best_c = c;
@@ -30,6 +31,7 @@ void check(int f, int t, ivi p, int n, int c) {
     }
     return;
   }
+
   if (p == primes.end() || *p > t) {
     if (f == 1) {
       check(1, 1, p, n, c);
@@ -38,15 +40,31 @@ void check(int f, int t, ivi p, int n, int c) {
     }
     return;
   }
+
+  if (t == f) {
+    cp(f);
+    check(1, 1, f * n, cp(f));
+    return;
+  }
+
   int a = 0;
   while (true) {
     check(f, t, p + 1, n, c * (a + 1));
-    n *= (*p);
-    a++;
-    if (f == t && t % (*p) != 0) break;
-    f = (f + (*p) - 1) / (*p);
-    t = t / (*p);
-    if (f > t) break;
+    if (f == t) {
+      if (f % (*p) != 0) break;
+      while (f / (*p) > 0 && f % *p == 0) {
+        a++;
+        n *= (*p);
+        f = f / (*p);
+      }
+      t = f;
+    } else {
+      n *= (*p);
+      a++;
+      f = (f + (*p) - 1) / (*p);
+      t = t / (*p);
+      if (f > t) break;
+    }
   }
 }
 
