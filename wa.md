@@ -23,3 +23,4 @@ reasons of WA
 389 - java turns out to be too slow, ingnored PE in c++
 10235 - hasty ready of statement
 10139 - wrong solution
+11728 - wrong solution (subsolution was not independed as first assumed)
