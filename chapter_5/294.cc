@@ -9,7 +9,6 @@ using llu = unsigned long long;
 const int INF = numeric_limits<int>::max();
 
 vi primes;
-int best_c, best_n;
 
 void sieve() {
   bitset<40000> b;
@@ -21,51 +20,20 @@ void sieve() {
   }
 }
 
-void check(int f, int t, ivi p, int n, int c) {
-  //cerr << f << " " << t << " " << *p << " " << n << " " << c << endl;
-
-  if (t == 1) {
-    if (c > best_c || (c == best_c && n < best_n)) {
-      best_c = c;
-      best_n = n;
-    }
-    return;
-  }
-
-  if (p == primes.end() || *p > t) {
-    if (f == 1) {
-      check(1, 1, p, n, c);
-    } else {
-      check(1, 1, p, f * n, c + 1);
-    }
-    return;
-  }
-
-  if (t == f) {
-    cp(f);
-    check(1, 1, f * n, cp(f));
-    return;
-  }
-
-  int a = 0;
-  while (true) {
-    check(f, t, p + 1, n, c * (a + 1));
-    if (f == t) {
-      if (f % (*p) != 0) break;
-      while (f / (*p) > 0 && f % *p == 0) {
-        a++;
-        n *= (*p);
-        f = f / (*p);
-      }
-      t = f;
-    } else {
-      n *= (*p);
+int count(int n) {
+  int c = 1;
+  auto p = primes.begin();
+  while (p != primes.end() && n >= (*p) * (*p)) {
+    int a = 0;
+    while (n % (*p) == 0) {
       a++;
-      f = (f + (*p) - 1) / (*p);
-      t = t / (*p);
-      if (f > t) break;
+      n /= *p;
     }
+    c *= (a + 1);
+    p++;
   }
+  if (n != 1) c *= 2;
+  return c;
 }
 
 int main() {
@@ -73,11 +41,18 @@ int main() {
   int tcc;
   cin >> tcc;
   while (tcc--) {
-    best_c = 0;
-    best_n = 0;
     int f, t;
     cin >> f >> t;
-    check(f, t, primes.begin(), 1, 1);
-    printf("Between %d and %d, %d has a maximum of %d divisors.\n", f, t, best_n, best_c);
+    int best_c = 0;
+    int best_i = 0;
+    for (int i = f; i <= t; i++) {
+      int k = count(i);
+      if (k > best_c) {
+        best_c = k;
+        best_i = i;
+      }
+    }
+    printf("Between %d and %d, %d has a maximum of %d divisors.\n",
+      f, t, best_i, best_c);
   }
 }
