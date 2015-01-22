@@ -24,3 +24,5 @@ reasons of WA
 10235 - hasty ready of statement
 10139 - wrong solution
 11728 - wrong solution (subsolution was not independed as first assumed)
+10212 - wrong solution
+10090 - rounding error
