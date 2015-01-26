@@ -26,3 +26,4 @@ reasons of WA
 11728 - wrong solution (subsolution was not independed as first assumed)
 10212 - wrong solution
 10090 - rounding error
+10800 - hasty read of output format
