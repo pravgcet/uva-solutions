@@ -1,7 +1,7 @@
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
-public class Main {
+class Main {
     String verb = "(hate|love|know|like)s?";
     String noun = "(tom|jerry|goofy|mickey|jimmy|dog|cat|mouse)";
     String actor = "(a |the )?"+noun;
