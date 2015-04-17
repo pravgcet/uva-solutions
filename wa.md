@@ -27,3 +27,4 @@ reasons of WA
 10212 - wrong solution
 10090 - rounding error
 10800 - hasty read of output format
+815 - not so easy to solve with integers because of rounding
