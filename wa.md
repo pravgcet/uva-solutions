@@ -28,3 +28,4 @@ reasons of WA
 10090 - rounding error
 10800 - hasty read of output format
 815 - not so easy to solve with integers because of rounding
+1111 - wrong implementation of standard algorithm
