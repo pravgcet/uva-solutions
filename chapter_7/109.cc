@@ -25,7 +25,7 @@ polygon build_hull(polygon &p) {
   int k = 0;
   for (size_t i = 1; i < p.size(); i++) {
     if (p[i].x > p[k].x) continue;
-    if (p[i].x == p[k].x && p[i].y > p[k].y) continue;
+    // if (p[i].x == p[k].x && p[i].y > p[k].y) continue;
     k = i;
   }
   swap(p[0], p[k]);
