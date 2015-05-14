@@ -12,7 +12,7 @@ bitset<20> primes;
 struct State;
 
 struct State {
-  list<int> digits;
+  int digits[8];
   int distance;
   friend ostream& operator << (ostream& stream, const State& s);
 };
@@ -33,7 +33,7 @@ const uint encode(const State s) {
 
 ostream& operator << (ostream& stream, const State& s) {
   for (int i = 0; i < 8; i++) stream << s.digits[i] << " ";
-  stream << "= " << hex <<  encode(s) << dec;
+  stream << "= " << hex << encode(s) << dec;
   return stream;
 }
 
@@ -42,7 +42,24 @@ bool fit(const int a, const int b) {
   return (a * b < 0) && primes[abs(a - b)];
 }
 
+void dance(State& n, State& s, int i, int j) {
+  int a = 0;
+  int b = 0;
+  // move i-th digit before j-th
+  int t = j;
+  if (j > i) t--;
+  while (b < 8) {
+    if (a == i) { a++; continue; }
+    if (b == t) { n.digits[b] = s.digits[i]; b++; continue; }
+    n.digits[b] = s.digits[a];
+    a++;
+    b++;
+  }
+}
+
 int main() {
+
+
   primes.set(3);
   primes.set(5);
   primes.set(7);
@@ -52,7 +69,21 @@ int main() {
   State target;
   for (int i = 0; i < 8; i++) target.digits[i] = i + 1;
   uint key = encode(target);
-
+/*
+  State x = target;
+  dance(x, target, 0, 2);
+  cerr << x << endl;
+  x = target;
+  dance(x, target, 0, 7);
+  cerr << x << endl;
+  x = target;
+  dance(x, target, 7, 0);
+  cerr << x << endl;
+  x = target;
+  dance(x, target, 7, 2);
+  cerr << x << endl;
+  return 0;
+*/
   // for (uint i = 0; i < (1u << 8); i++) {
   //   State s;
   //   for (int j = 0; j < 8; j++) {
@@ -68,10 +99,14 @@ int main() {
 
   for (int tc = 1;; tc++) {
     State s;
-    for (int i = 0; i < 8; i++) {
+    int t;
+    cin >> t;
+    if (t == 0) break;
+    s.digits[0] = t;
+    for (int i = 1; i < 8; i++) {
       cin >> s.digits[i];
-      if (s.digits[i] == 0) goto BYE;
     }
+    s.distance = 0;
     queue<State> q;
     q.emplace(s);
     set<uint> queued;
@@ -79,41 +114,43 @@ int main() {
     int ans = -1;
     while (!q.empty()) {
       State s = q.front(); q.pop();
-      cerr << s << endl;
+      auto c = encode(s);
+      if ((key & c) == key) {
+         ans = s.distance;
+         break;
+      }
+      // cerr << s << endl;
       for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
-          if (j == i) continue;
           if (!fit(s.digits[i], s.digits[j])) continue;
           State n = s;
-          n.move(i, j);
-          auto c = encode(n);
-          i0f (queued.count(c)) continue;
-          if ((key & c) == key) {
-             ans = n.distance;
-             goto FOUND;
+          n.distance++;
+          dance(n, s, i, j);
+          c = encode(n);
+          if (!queued.count(c)) {
+            // cerr << "+ " << n << endl;
+            queued.insert(c);
+            q.emplace(n);
           }
-          queued.insert(c);
-          q.emplace(n);
-          cerr << "+ " << n << endl;
-          State n = s;
-          n.move(i, j + 1);
-          auto c = encode(n);
-          if ((key & c) == key) {
-             ans = n.distance;
-             goto FOUND;
+
+          // swap this pair
+          if (j > i) {
+            swap(n.digits[j - 1], n.digits[j]);
+          } else {
+            swap(n.digits[j], n.digits[j + 1]);
           }
-          if (queued.count(c)) continue;
-          queued.insert(c);
-          q.emplace(n);
-          cerr << "+ " << n << endl;
+
+          c = encode(n);
+          if (!queued.count(c)) {
+            // cerr << "+ " << n << endl;
+            queued.insert(c);
+            q.emplace(n);
+          }
         }
       }
     }
-FOUND:
-    // if (distance.count(c)) ans = distance[c];
     printf("Case %d: %d\n", tc, ans);
   }
-BYE:
   return 0;
 }
 
