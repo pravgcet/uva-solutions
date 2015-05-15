@@ -26,7 +26,7 @@ const uint encode(const State s) {
   c <<= 2;
   for (int i = 0; i < 8; i++) {
     if (i) c <<= 3;
-    c += abs(s.digits[i]);
+    c += abs(s.digits[i]) & 7;
   }
   return c;
 }
@@ -58,8 +58,6 @@ void dance(State& n, State& s, int i, int j) {
 }
 
 int main() {
-
-
   primes.set(3);
   primes.set(5);
   primes.set(7);
@@ -116,10 +114,10 @@ int main() {
       State s = q.front(); q.pop();
       auto c = encode(s);
       if ((key & c) == key) {
+         // cerr << s << endl;
          ans = s.distance;
          break;
       }
-      // cerr << s << endl;
       for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
           if (!fit(s.digits[i], s.digits[j])) continue;
