@@ -69,10 +69,16 @@ int main() {
   uint key = encode(target);
 /*
   State x = target;
-  dance(x, target, 0, 2);
+  dance(x, target, 0, 1);
+  cerr << x << endl;
+  x = target;
+  dance(x, target, 2, 1);
   cerr << x << endl;
   x = target;
   dance(x, target, 0, 7);
+  cerr << x << endl;
+  x = target;
+  dance(x, target, 5, 3);
   cerr << x << endl;
   x = target;
   dance(x, target, 7, 0);
