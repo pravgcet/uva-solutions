@@ -51,18 +51,18 @@ void fill_targets() {
     int d = 1;
     while (!q.empty()) {
       ll x = q.front(); q.pop();
-      if (x == -2) { d = 2; continue; }
+      if (x < 1) { d = -x; continue; }
       for (int i = 0; i < m; i++) {
         for (int j = i + 1; j < m; j++) {
           for (int k = 0; k < m - (j - i); k++) {
             auto t = edit(x, i, j, k, m);
             if (dist.count(t)) continue;
             dist[t] = d;
-            if (max_distance == 0) {
-              max_distance = 2;
-              q.emplace(-2);
+            if (d + 1 > max_distance) {
+              max_distance = d + 1;
+              q.emplace(-max_distance);
             }
-            if (d < 2) q.emplace(t);
+            if (max_distance < 3) q.emplace(t);
           }
         }
       }
@@ -78,7 +78,7 @@ int find_distance(int n, int m) {
   int d = 1;
   while (!q.empty()) {
     ll x = q.front(); q.pop();
-    if (x == -2) { d = 2; continue; }
+    if (x < 1) { d = -x; continue; }
     for (int i = 0; i < m; i++) {
       for (int j = i + 1; j < m; j++) {
         for (int k = 0; k < m - (j - i); k++) {
@@ -86,11 +86,11 @@ int find_distance(int n, int m) {
           if (dist.count(t)) {
             return dist[t] + d;
           }
-          if (max_distance == 0) {
-            q.emplace(-2);
-            max_distance = 2;
+          if (d + 1 > max_distance) {
+            max_distance = d + 1;
+            q.emplace(-max_distance);
           }
-          if (d < 2) q.emplace(t);
+          if (max_distance < 3) q.emplace(t);
         }
       }
     }
@@ -111,4 +111,5 @@ int main() {
     tc++;
     printf("Case %d: %d\n", tc, find_distance(n, m));
   }
+  return 0;
 }
