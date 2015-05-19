@@ -8,16 +8,16 @@ using llu = unsigned long long;
 const int INF = numeric_limits<int>::max();
 
 // move
-llu edit(llu n, int a, int b, int k, int m) {
-  llu r = 0;
+ll edit(ll n, int a, int b, int k, int m) {
+  ll r = 0;
   int t = 0;
   int p = 0;
   if (k >= a) k++;
-  llu mult = 1;
-  llu q = n;
+  ll mult = 1;
+  ll q = n;
   while (t < m) {
     if (t == k) {
-      llu cut = n;
+      ll cut = n;
       int i = 0;
       for (; i < a; i++) cut /= 10;
       for (; i < b; i++) {
@@ -38,13 +38,77 @@ llu edit(llu n, int a, int b, int k, int m) {
   return r;
 }
 
+unordered_map<ll, int> dist;
+
+void fill_targets() {
+  ll n = 1;
+  for (int m = 2; m < 10; m++) {
+    n = n * 10 + m;
+    queue<ll> q;
+    q.emplace(n);
+    dist[n] = 0;
+    int max_distance = 0;
+    int d = 1;
+    while (!q.empty()) {
+      ll x = q.front(); q.pop();
+      if (x == -2) { d = 2; continue; }
+      for (int i = 0; i < m; i++) {
+        for (int j = i + 1; j < m; j++) {
+          for (int k = 0; k < m - (j - i); k++) {
+            auto t = edit(x, i, j, k, m);
+            if (dist.count(t)) continue;
+            dist[t] = d;
+            if (max_distance == 0) {
+              max_distance = 2;
+              q.emplace(-2);
+            }
+            if (d < 2) q.emplace(t);
+          }
+        }
+      }
+    }
+  }
+}
+
+int find_distance(int n, int m) {
+  if (dist.count(n)) return dist[n];
+  queue<ll> q;
+  q.emplace(n);
+  int max_distance = 0;
+  int d = 1;
+  while (!q.empty()) {
+    ll x = q.front(); q.pop();
+    if (x == -2) { d = 2; continue; }
+    for (int i = 0; i < m; i++) {
+      for (int j = i + 1; j < m; j++) {
+        for (int k = 0; k < m - (j - i); k++) {
+          auto t = edit(x, i, j, k, m);
+          if (dist.count(t)) {
+            return dist[t] + d;
+          }
+          if (max_distance == 0) {
+            q.emplace(-2);
+            max_distance = 2;
+          }
+          if (d < 2) q.emplace(t);
+        }
+      }
+    }
+  }
+  return 5;
+}
+
 int main() {
-  llu n = 7654321;
-  cerr << edit(n, 2, 4, 0, 7) << endl;
-  cerr << edit(n, 2, 3, 0, 7) << endl;
-  cerr << edit(n, 2, 4, 1, 7) << endl;
-  cerr << edit(n, 2, 4, 2, 7) << endl;
-  cerr << edit(n, 2, 4, 3, 7) << endl;
-  cerr << edit(n, 2, 4, 4, 7) << endl;
-  cerr << edit(n, 0, 1, 0, 7) << endl;
+  fill_targets();
+  int m;
+  int tc = 0;
+  while (cin >> m, m) {
+    ll n = 0;
+    for (int i = 0; i < m; i++) {
+      int x; cin >> x;
+      n = n * 10 + x;
+    }
+    tc++;
+    printf("Case %d: %d\n", tc, find_distance(n, m));
+  }
 }
