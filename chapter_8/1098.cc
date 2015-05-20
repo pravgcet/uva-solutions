@@ -17,52 +17,67 @@ const int dx[] = { 1, -1, 0, 0 };
 const int dy[] = { 0, 0, 1, -1 };
 bool field[MAX][MAX];
 int n, m;
-int counter;
 llu full;
-int start_x, start_y;
+llu future_checkpoints;
 
-bool connected() {
-  // return true;
-  bool w[MAX][MAX];
-  memcpy(&w, &field, MAX * MAX * sizeof(bool));
+const llu set_field(const llu field, const int x, const int y) {
+  return field | (1llu << (x * m + y));
+}
+
+const bool field_is_set(const llu field, const int x, const int y) {
+  return field & (1llu << (x * m + y));
+}
+
+bool connected(llu field) {
   queue<pair<int, int>> q;
+  field = set_field(field, 0, 1);
   q.emplace(0, 1);
-  w[0][1] = true;
   while (!q.empty()) {
     auto p = q.front(); q.pop();
     for (int i = 0; i < 4; i++) {
       int x = p.first + dx[i];
       int y = p.second + dy[i];
-      if (x < 0 || x >= n || y < 0 || y >= m || w[x][y]) continue;
-      w[x][y] = true;
+      if (x < 0 || x >= n || y < 0 || y >= m ||
+          field_is_set(field, x, y)) continue;
+      field = set_field(field, x, y);
       q.emplace(x, y);
     }
   }
-  for (int x = 0; x < n; x++) {
-    for (int y = 0; y < m; y++) {
-      if (!w[x][y]) return false;
-    }
-  }
-  return true;
+  return field == full;
 }
 
+int add;
+unordered_map<llu, llu> counts;
+check_point target;
 
-llu encode() {
-  llu r = 0;
-  for (int i = 0; i < n; i++) {
-    for (int j = 0; j < m; j++) {
-      r = r << 1;
-      if (field[i][j] && (i != start_x || j != start_y)) r++;
+// top > 0
+bool reachable(llu field, int x1, int y1, int x2, int y2, int top) {
+  queue<tuple<int, int, int>> q;
+  q.emplace(x1, y1, 0);
+  field = set_field(field, x1, y1);
+  while (!q.empty()) {
+    auto v = q.front(); q.pop();
+    int x0 = get<0>(v);
+    int y0 = get<1>(v);
+    int d = get<2>(v);
+    d++;
+    for (int i = 0; i < 4; i++) {
+      int x = x0 + dx[i];
+      int y = y0 + dy[i];
+      if (x < 0 || x >= n || y < 0 || y >= m ||
+        field_is_set(field, x, y) ||
+        field_is_set(future_checkpoints, x, y)) continue;
+      if (x == x2 && y == y2) return d <= top;
+      field = set_field(field, x, y);
+      q.emplace(x, y, d);
     }
   }
-  return r;
+  return false;
 }
 
-void dfs(int x0, int y0, check_point target, int t,
-  unordered_map<llu, llu>& counts) {
+void dfs(int x0, int y0, int t, const llu field) {
   if (t == target.t) {
-    llu e = encode();
-    counts[e]++;
+    counts[field] += add;
     return;
   }
   t++;
@@ -70,73 +85,64 @@ void dfs(int x0, int y0, check_point target, int t,
     int x = x0 + dx[i];
     int y = y0 + dy[i];
     // within field
-    if (x < 0 || x >= n || y < 0 || y >= m) continue;
+    if (x < 0 || x >= n || y < 0 || y >= m ||
+        field_is_set(field, x, y) ||
+        field_is_set(future_checkpoints, x, y)) continue;
     // not visited
-    if (field[x][y]) continue;
-    // check points met
-    int d = abs(target.x - x) + abs(target.y - y);
     int dt = target.t - t;
+    int d = abs(target.x - x) + abs(target.y - y);
     if (d == 0 && dt != 0) continue;
+    // check point met
+    // todo check if target is already set before DFS
     if (d > dt) continue;
-    field[x][y] = true;
-    if (connected()) {
-      dfs(x, y, target, t, counts);
+    // if (dt > 0 && !reachable(field, target.x, target.y, x, y, dt)) continue;
+    llu u = set_field(field, x, y);
+    if (connected(u)) {
+      dfs(x, y, t, u);
     }
-    field[x][y] = false;
   }
-}
-
-void travel(int x0, int y0, check_point target, int t,
-  unordered_map<llu, llu>& c) {
-  fill(&field[0][0], &field[MAX][0], false);
-  field[x0][y0] = true;
-  start_x = x0; start_y = y0;
-  dfs(x0, y0, target, t, c);
 }
 
 int main() {
   int tc = 0;
   while (cin >> n >> m, n != 0) {
-    check_point points[4];
-    for (int i = 0; i < 3; i++) {
-      cin >> points[i].x >> points[i].y;
-      points[i].t = m * n * (i + 1) / 4;
+    tc++;
+    check_point cp[5];
+    cp[0].x = 0;
+    cp[0].y = 0;
+    cp[0].t = 1;
+    for (int i = 1; i < 4; i++) {
+      cin >> cp[i].x >> cp[i].y;
+      cp[i].t = m * n * i / 4;
     }
-    points[3].x = 0;
-    points[3].y = 1;
-    points[3].t = m * n;
+    cp[4].x = 0;
+    cp[4].y = 1;
+    cp[4].t = m * n;
+
     full = 0;
-    for (int i = 0; i < n * m; i++) {
-      full = (full << 1) + 1;
-    }
-
-    unordered_map<llu, llu> p1, p2, p3, p4;
-    travel(0, 0, points[0], 1, p1);
-    travel(points[0].x, points[0].y, points[1], points[0].t, p2);
-    travel(points[1].x, points[1].y, points[2], points[1].t, p3);
-    travel(points[2].x, points[2].y, points[3], points[2].t, p4);
-
-    cerr << p1.size() << endl << p2.size() << endl << p3.size() << endl << p4.size() << endl;
-
-    // return 0;
-
-    llu total = 0;
-    for (auto a1 : p1) {
-      for (auto a2 : p2) {
-        if (a1.first & a2.first) continue;
-        llu j12 = a1.first | a2.first;
-        for (auto a3 : p3) {
-          if (a3.first & j12) continue;
-          llu j123 = a3.first | j12;
-          for (auto a4 : p4) {
-            if (a4.first & j123) continue;
-            total += a1.second * a2.second * a3.second * a4.second;
-          }
-        }
+    for (int i = 0; i < n; i++) {
+      for (int j = 0; j < m; j++) {
+        full = set_field(full, i, j);
       }
     }
-    tc++;
-    printf("Case %d: %llu\n", tc, total);
+
+    unordered_map<llu, llu> a;
+    a[set_field(0, 0, 0)] = 1;
+    for (int i = 0; i < 4; i++) {
+      auto from = cp[i];
+      auto to = cp[i + 1];
+      future_checkpoints = 0;
+      for (int j = i + 2; j < 5; j++) {
+        future_checkpoints = set_field(future_checkpoints, cp[j].x, cp[j].y);
+      }
+      counts.clear();
+      target = to;
+      for (auto s : a) {
+        add = s.second;
+        dfs(from.x, from.y, from.t, s.first);
+      }
+      swap(a, counts);
+    }
+    printf("Case %d: %llu\n", tc, a[full]);
   }
 }
-  // }
