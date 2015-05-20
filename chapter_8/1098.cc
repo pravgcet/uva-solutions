@@ -50,52 +50,25 @@ int add;
 unordered_map<llu, llu> counts;
 check_point target;
 
-// top > 0
-bool reachable(llu field, int x1, int y1, int x2, int y2, int top) {
-  queue<tuple<int, int, int>> q;
-  q.emplace(x1, y1, 0);
-  field = set_field(field, x1, y1);
-  while (!q.empty()) {
-    auto v = q.front(); q.pop();
-    int x0 = get<0>(v);
-    int y0 = get<1>(v);
-    int d = get<2>(v);
-    d++;
-    for (int i = 0; i < 4; i++) {
-      int x = x0 + dx[i];
-      int y = y0 + dy[i];
-      if (x < 0 || x >= n || y < 0 || y >= m ||
-        field_is_set(field, x, y) ||
-        field_is_set(future_checkpoints, x, y)) continue;
-      if (x == x2 && y == y2) return d <= top;
-      field = set_field(field, x, y);
-      q.emplace(x, y, d);
-    }
-  }
-  return false;
-}
-
 void dfs(int x0, int y0, int t, const llu field) {
-  if (t == target.t) {
-    counts[field] += add;
-    return;
-  }
+  // if (t == target.t) {
+  //   counts[field] += add;
+  //   return;
+  // }
   t++;
   for (int i = 0; i < 4; i++) {
     int x = x0 + dx[i];
     int y = y0 + dy[i];
-    // within field
     if (x < 0 || x >= n || y < 0 || y >= m ||
         field_is_set(field, x, y) ||
         field_is_set(future_checkpoints, x, y)) continue;
-    // not visited
     int dt = target.t - t;
     int d = abs(target.x - x) + abs(target.y - y);
-    if (d == 0 && dt != 0) continue;
-    // check point met
-    // todo check if target is already set before DFS
+    if (d == 0) {
+      if (dt == 0) counts[set_field(field, x, y)] += add;
+      continue;
+    }
     if (d > dt) continue;
-    // if (dt > 0 && !reachable(field, target.x, target.y, x, y, dt)) continue;
     llu u = set_field(field, x, y);
     if (connected(u)) {
       dfs(x, y, t, u);
