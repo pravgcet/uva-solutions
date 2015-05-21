@@ -10,90 +10,88 @@ const int MAX = 41;
 
 using vb = vector<int>;
 int n;
-int formation[MAX]; int king;
-int result, back_result;
+int state[MAX];
+int result;
 int bound;
-const int MAX_BACK = 10;
 ll ops = 0;
+int next_bound;
 
-const int di[] = {-4, -3, -1, 1, 3, 4};
+int displacement[MAX][MAX];
+int moves[MAX][MAX];
 
-int ht[MAX][MAX];
-
-int h() {
-  int x = 0;
-  for (int i = 1; i <= n; i++) {
-    int f = formation[i - 1];
-    if (f == 1) continue;
-    // if (i + 1 % 4 != f[i] % 4) x++;
-    x += abs(i - f) / 4;
-    int t = abs((i % 4) - (f % 4));
-    switch (t) {
-      case 1:
-      case 3: x++; break;
-      case 2: x += 2; break;
-    }
-    // if (state[i] == i + 1) continue;
-    // x++;// abs(i + 1 - state[i]) / 4;
-  }
-  return x;
-}
-
-void dfs(int g, int tabu, int hh) {
+bool dfs(int g, int tabu, int estimation, int king) {
   // ops++;
-  if (hh == 0) {
+  if (estimation == 0) {
     result = g;
-    return;
+    return true;
   }
-  if (g + hh > bound) return;
+  if (g + estimation > bound) {
+    next_bound = min(next_bound, g + estimation);
+    return false;
+  }
   g++;
-  for (int j = 0; j < 6; j++) {
-    int i = di[j];
-    if (i == tabu) continue;
-    int k = king + i;
-    if (k < 0 || k >= n) continue;
-    if (j > 0 && j < 5 && k / 4 != king / 4) continue;
-    int dh = ht[k][formation[k]];
-    swap(formation[k], formation[king]); swap(king, k);
-    dfs(g, -i, hh - dh + ht[k][formation[k]]);
-    swap(formation[k], formation[king]); swap(king, k);
-    if (result != INF) return;
+  int m = moves[king][0];
+  for (int j = 1; j < m; j++) {
+    int &k = moves[king][j];
+    if (k == tabu) continue;
+    int de = displacement[king][state[k]] - displacement[k][state[k]];
+    swap(state[k], state[king]);
+    if (dfs(g, king, estimation + de, k)) return true;
+    swap(state[k], state[king]);
   }
+  return false;
 }
 
-int ida() {
-  bound = h();
+int ida(int king) {
+  int estimation = 0;
+  for (int i = 0; i < n; i++) {
+    if (i == king) continue;
+    estimation += displacement[i][state[i]];
+  }
+  bound = estimation;
   result = INF;
-  int hh = bound;
-  for (; result == INF; bound++) {
-    dfs(0, 0, hh);
+  while (true) {
+    next_bound = INF;
+    if (dfs(0, -1, estimation, king)) break;
+    bound = next_bound;
   }
   return result;
 }
 
 int main() {
+   // lookups for estimations
   for (int i = 0; i < 40; i++) {
     for (int f = 2; f <= 40; f++) {
-      int& x = ht[i][f];
-      x = 0;
       int d = abs(i - f + 1);
-      x += d / 4;
-      switch (d % 4) {
-        case 1:
-        case 3: x++; break;
-        case 2: x += 2; break;
-      }
+      displacement[i][f] = abs(i / 4 - (f - 1) / 4) + min(d % 4, 4 - d % 4);
     }
   }
 
   int tc = 0;
   while (cin >> n, n) {
-    for (int i = 0; i < n; i++) {
-      cin >> formation[i];
-      if (formation[i] == 1) king = i;
+  // lookups for moves
+    fill(&moves[0][0], &moves[MAX][0], 0);
+    int king;
+    for (king = 0; king < n; king++) {
+      int &j = moves[king][0] = 1;
+      for (int i = -4; i <= 4; i++) {
+        if (i == 0 || i == 2 || i == -2) continue;
+        int k = king + i;
+        if (k < 0 || k >= n) continue;
+        if (i > -4 && i < 4 && k / 4 != king / 4) continue;
+        moves[king][j] = k;
+        j++;
+      }
     }
+
+    for (int i = 0; i < n; i++) {
+      cin >> state[i];
+      // scanf("%d", &state[i]);
+      if (state[i] == 1) king = i;
+    }
+
     tc++;
-    printf("Set %d:\n%d\n", tc, ida());
+    printf("Set %d:\n%d\n", tc, ida(king));
   }
   // cerr << ops << " ops" << endl;
 }
