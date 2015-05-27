@@ -8,6 +8,19 @@ using llu = unsigned long long;
 const int INF = numeric_limits<int>::max();
 const int MAX = 500;
 
+// invariant: answer is within (a, b], f(a) = false, f(b) = true
+ll binary_search_lower(ll a, ll b, function<bool(ll)> f) {
+  while (b - a > 1) {
+    ll m = (a + b) / 2;
+    if (f(m)) {
+      b = m;
+    } else {
+      a = m;
+    }
+  }
+  return b;
+}
+
 int main() {
   int tcc;
   cin >> tcc;
@@ -21,9 +34,7 @@ int main() {
       b = max(b, books[i] - 1);
       t += books[i];
     }
-    while (t - b > 1) {
-      cerr << b << ".." << t << endl;
-      int x = (t + b) / 2;
+    t = binary_search_lower(b, t, [&] (ll x) {
       int i = 0;
       for (int j = 0; j < k; j++) {
         int a = 0;
@@ -32,13 +43,8 @@ int main() {
           i++;
         }
       }
-      if (i == m) {
-        t = x;
-      } else {
-        b = x;
-      }
-    }
-    cerr << b << ".." << t << endl;
+      return i == m;
+    });
     stack<int> ans;
     int a = 0;
     int left = k - 1;
