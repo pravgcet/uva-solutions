@@ -40,7 +40,6 @@ void connect(pnode &a, pnode &b, int w, int price) {
 
 int adjust(pedge e, int d) {
   if (!e) return d;
-  if (d == 0) return 0;
   d = adjust(e->from->back, min(d, e->flow));
   e->flow -= d;
   e->opposite->flow += d;
@@ -65,8 +64,9 @@ ll max_flow(vector<pnode> &g, pnode &source, pnode &sink, int max_price) {
     }
     if (!sink->visited) break;
     for (auto e : sink->adjusted) {
-      if (!e->to->visited || e->price > max_price) continue;
-      result += adjust(e->opposite, INF);
+      auto o = e->opposite;
+      if (!e->to->visited || e->price > max_price || o->flow == 0) continue;
+      result += adjust(o, o->flow);
     }
   }
   return result;
@@ -97,8 +97,6 @@ int main() {
     graph g;
     pnode source = make_shared<node>();
     g.emplace_back(source);
-    pnode sink = make_shared<node>();
-    g.emplace_back(sink);
     pnode city_day[MAX][MAX];
     for (int i = 0; i < n; i++) {
       for (int j = 0; j <= d; j++) {
@@ -122,7 +120,7 @@ int main() {
       sum += z;
       connect(source, city_day[i][0], z, 0);
     }
-    connect(city_day[n - 1][d], sink, INF, 0);
+    auto sink = city_day[n - 1][d];
     sort(prices.begin(), prices.end());
     auto test = [&] (ll x) {
       int price = 0;
