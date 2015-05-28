@@ -5,6 +5,10 @@ using vi = vector<int>;
 using ii = pair<int,int>;
 using ll = long long;
 using llu = unsigned long long;
+using vb = vector<bool>;
+using vvb = vector<vb>;
+using vd = vector<double>;
+using vvd = vector<vd>;
 const int INF = numeric_limits<int>::max();
 
 struct point {
@@ -31,68 +35,26 @@ ostream& operator << (ostream& s, const point& p) {
   return s;
 }
 
-struct node;
-struct edge;
-using pnode = shared_ptr<node>;
-using pedge = shared_ptr<edge>;
-using graph = vector<pnode>;
-
-struct node {
-  bool visited;
-  vector<pedge> adjusted;
-  pedge back;
-  point p;
-};
-
-struct edge {
-  pnode from, to;
-  int flow;
-  int capacity;
-  pedge opposite;
-  double d;
-};
-
-void connect(pnode &a, pnode &b, int w, double d) {
-  pedge ea = make_shared<edge>();
-  pedge eb = make_shared<edge>();
-  ea->from = a; ea->to = b; ea->capacity = ea->flow = w; ea->opposite = eb;
-  ea->d = d;
-  eb->from = b; eb->to = a; eb->capacity = eb->flow = 0; eb->opposite = ea;
-  eb->d = d;
-  a->adjusted.emplace_back(ea);
-  b->adjusted.emplace_back(eb);
+bool bipartite_matching_connect(const int u, vvb& m, vi& to, vb& used) {
+  for (size_t v = 0; v < to.size(); v++) {
+    if (!m[u][v] || used[v]) continue;
+    used[v] = true;
+    if (to[v] == -1 || bipartite_matching_connect(to[v], m, to, used)) {
+      to[v] = u;
+      return true;
+    }
+  }
+  return false;
 }
 
-int adjust(pedge e, int d) {
-  if (!e) return d;
-  d = adjust(e->from->back, min(d, e->flow));
-  e->flow -= d;
-  e->opposite->flow += d;
-  return d;
-}
-
-int max_flow(vector<pnode> &g, pnode &source, pnode &sink, double max_d) {
+// {A} => {B}, m[i][j] == A[i] -> B[j]
+int bipartite_matching(vvb& m) {
+  if (m.empty()) return 0;
+  vi to(m[0].size(), -1);
   int result = 0;
-  while (true) {
-    for (auto u : g) u->visited = false;
-    queue<pnode> q;
-    q.push(source); source->visited = true;
-    while (!(q.empty() || sink->visited)) {
-      auto u = q.front(); q.pop();
-      for (auto e : u->adjusted) {
-        auto v = e->to;
-        if (v->visited || e->flow == 0 || e->d > max_d) continue;
-        v->back = e;
-        v->visited = true;
-        q.push(v);
-      }
-    }
-    if (!sink->visited) break;
-    for (auto e : sink->adjusted) {
-      auto o = e->opposite;
-      if (!o->from->visited || o->flow == 0 || o->d > max_d) continue;
-      result += adjust(o, o->flow);
-    }
+  for (size_t u = 0; u < m.size(); u++) {
+    vb used(to.size());
+    if (bipartite_matching_connect(u, m, to, used)) result++;
   }
   return result;
 }
@@ -115,38 +77,36 @@ int main() {
   int tcc;
   cin >> tcc;
   for (int tc = 1; tc <= tcc; tc++) {
-    vector<pnode> red, blue;
     int n, k;
     cin >> n >> k;
-    graph g;
-    pnode source = make_shared<node>();
-    pnode sink = make_shared<node>();
-    g.emplace_back(source);
-    g.emplace_back(sink);
+    vector<point> red, blue;
     for (int i = 0; i < n; i++) {
-      string color;
-      pnode u = make_shared<node>();
-      g.emplace_back(u);
-      cin >> u->p.x >> u->p.y >> color;
+      string color; int x, y;
+      cin >> x >> y >> color;
       if (color == "red") {
-        red.emplace_back(u);
-        connect(source, u, 1, 0);
+        red.emplace_back(x, y);
       } else {
-        blue.emplace_back(u);
-        connect(u, sink, 1, 0);
+        blue.emplace_back(x, y);
       }
     }
 
-    for (auto r : red) {
-      for (auto b : blue) {
-        double l = r->p >> b->p;
-        connect(r, b, 1, l);
+    vvd d(red.size());
+    for (size_t i = 0; i < red.size(); i++) {
+      for (size_t j = 0; j < blue.size(); j++) {
+        d[i].emplace_back(red[i] >> blue[j]);
       }
     }
+
+    vvb allowed(red.size());
+    for (auto &a : allowed) a.resize(blue.size());
 
     auto test = [&] (ll x) {
-      for (auto u : g) for (auto e : u->adjusted) e->flow = e->capacity;
-      return max_flow(g, source, sink, x) >= k;
+      for (size_t i = 0; i < d.size(); i++) {
+        for (size_t j = 0; j < d[0].size(); j++) {
+          allowed[i][j] = d[i][j] <= x;
+        }
+      }
+      return bipartite_matching(allowed) >= k;
     };
 
     if (!test(3000)) {
