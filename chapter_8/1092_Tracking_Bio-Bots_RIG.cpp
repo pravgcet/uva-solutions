@@ -17,8 +17,8 @@ bool random_bool() {
   return random_in_range(0, 1) == 1;
 }
 
-const int MAX_SIZE = 50;
-const int MAX_WALLS = 50;
+const int MAX_SIZE = 100; // according to problem up to 1000000
+const int MAX_WALLS = 100; // up to 1000
 
 int main() {
   int tcc = 10;
@@ -46,11 +46,13 @@ int main() {
         x++;
       }
     }
-    printf("%d %d %lu\n", n, m, walls.size());
+    // TODO actually we end up with less then w walls
+    // and walls never stick to each other horisontally
+    printf("%d %d %lu\n", m, n, walls.size());
     for (auto ww : walls) {
       printf("%d %d %d %d\n", get<0>(ww), get<2>(ww), get<1>(ww), get<2>(ww));
     }
-    printf("\n"); // wrong format but for readability
+    // printf("\n"); // wrong format but for readability
   }
   printf("0 0 0 0\n");
 }
