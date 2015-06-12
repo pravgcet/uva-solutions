@@ -14,7 +14,7 @@ using pedge = shared_ptr<edge>;
 using graph = vector<pnode>;
 
 struct node {
-  bool visited;
+  int age;
   vector<pedge> adjusted;
   pedge back;
 };
@@ -49,23 +49,25 @@ int adjust(pedge e, int d) {
 ll max_flow(vector<pnode> &g, pnode &source, pnode &sink, int max_price) {
   ll result = 0;
   while (true) {
-    for (auto u : g) u->visited = false;
+    for (auto u : g) u->age = 0;
     queue<pnode> q;
-    q.push(source); source->visited = true;
-    while (!(q.empty() || sink->visited)) {
+    q.push(source); source->age = 1;
+    while (!(q.empty() || sink->age != 0)) {
       auto u = q.front(); q.pop();
       for (auto e : u->adjusted) {
         auto v = e->to;
-        if (v->visited || e->flow == 0 || e->price > max_price) continue;
+        if (v->age != 0 || e->flow == 0 || e->price > max_price) continue;
         v->back = e;
-        v->visited = true;
+        v->age = u->age + 1;
         q.push(v);
       }
     }
-    if (!sink->visited) break;
+    if (sink->age == 0) break;
     for (auto e : sink->adjusted) {
       auto o = e->opposite;
-      if (!e->to->visited || e->price > max_price || o->flow == 0) continue;
+      if ((e->to->age != sink->age - 1) ||
+           e->price > max_price
+           || o->flow == 0) continue;
       result += adjust(o, o->flow);
     }
   }
