@@ -13,9 +13,17 @@ using vvd = vector<vd>;
 const int INF = numeric_limits<int>::max();
 const double EPS = 1e-10;
 
+bool equal_double(double x, double y, double epsilon) {
+  if (abs(x - y) < epsilon) return true;
+  // Is x or y too close to zero?
+  if (abs(x) < epsilon || abs(y) < epsilon) return false;
+  // Check relative precision.
+  return (abs((x - y) / x) < epsilon) && (abs((x - y) / y) < epsilon);
+}
+
 // invariant: answer is within (a, b], f(a) = false, f(b) = true
 double binary_search_lower(double a, double b, function<bool(double)> f) {
-  while (round(b * 10) != round(a * 10) && b - a > EPS) {
+  while (!equal_double(a, b, EPS)) {
     double m = (a + b) / 2;
     if (f(m)) {
       b = m;
