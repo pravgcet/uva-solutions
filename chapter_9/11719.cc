@@ -16,128 +16,39 @@ const int INF = numeric_limits<int>::max();
 const double EPS = 1e-10;
 
 const ll MOD = 10000000000000007;
+const int G = 20;
 
-struct bigint {
-  static const ll BUCKET = 100;
-  static const int BUCKET_DIGITS = 2;
-  vll buckets;
-  // constructors
-  bigint() {};
-  bigint(ll a) {
-    buckets.emplace_back(a);
-    normalize();
+vi to_v(ll n) {
+  vi d(G);
+  int i = 0;
+  while (n) {
+    d[i] = n % 100;
+    n /= 100;
+    i++;
   }
-  bigint(const bigint& n) { buckets = n.buckets; }
-  bigint(bigint&& n) : bigint() { swap(*this, n); }
-  friend void swap(bigint& first, bigint& second) {
-    swap(first.buckets, second.buckets);
-  }
-  // assignment
-  bigint& operator = (ll a) {
-    buckets.clear();
-    buckets.emplace_back(a);
-    normalize();
-    return *this;
-  }
-  bigint& operator = (bigint rhs) {
-    swap(*this, rhs);
-    return *this;
-  }
-  // utility
-  void normalize() {
-    size_t i = 0;
-    while (i < buckets.size()) {
-      ll t = buckets[i] / BUCKET;
-      if (t) {
-        if (i + 1 == buckets.size()) buckets.resize(i + 2);
-        buckets[i + 1] += t;
-        buckets[i] %= BUCKET;
-      }
-      i++;
-    }
-  }
-  size_t size() {
-    if (buckets.empty()) return 0;
-    size_t r = BUCKET_DIGITS * (buckets.size() - 1) + 1;
-    ll b = buckets.back();
-    while (b >= 10) {
-      r++;
-      b /= 10;
-    }
-    return r;
-  }
-  friend ostream& operator << (ostream& s, bigint& n) {
-    for (auto i = n.buckets.rbegin(); i != n.buckets.rend(); i++) {
-      s << *i << setw(BUCKET_DIGITS) << setfill('0');
-    }
-    s << setw(0);
-    return s;
-  }
-  // +
-  friend bigint operator + (bigint lhs, const bigint &rhs) {
-    lhs += rhs;
-    return lhs;
-  }
-  bigint& operator += (const bigint& rhs) {
-    size_t n = rhs.buckets.size();
-    if (n > buckets.size()) buckets.resize(n);
-    for (size_t i = 0; i < min(buckets.size(), n); i++) {
-      buckets[i] += rhs.buckets[i];
-    }
-    normalize();
-    return *this;
-  }
-  bigint& operator += (const ll n) {
-    buckets[0] += n;
-    normalize();
-    return *this;
-  }
-  friend bigint operator + (bigint lhs, const ll &rhs) {
-    lhs += rhs;
-    return lhs;
-  }
-  // *
-  bigint& operator *= (const ll n) {
-    for (size_t i = 0; i < buckets.size(); i++) {
-      buckets[i] *= n;
-    }
-    normalize();
-    return *this;
-  }
-  friend bigint operator * (bigint lhs, const ll &rhs) {
-    lhs *= rhs;
-    return lhs;
-  }
-  bigint& operator *= (const bigint& rhs) {
-    bigint c = *this;
-    buckets.clear();
-    for (size_t i = 0; i < rhs.buckets.size(); i++) {
-      *this += (c * rhs.buckets[i]);
-      normalize();
-      c.buckets.insert(c.buckets.begin(), 0);
-    }
-    return *this;
-  }
-  friend bigint operator * (bigint lhs, const bigint &rhs) {
-    lhs *= rhs;
-    return lhs;
-  }
-  friend ll mod(const bigint& lhs, const ll mod) {
-    ll r = 0;
-    for (auto i = lhs.buckets.rbegin(); i != lhs.buckets.rend(); i++) {
-      r = (r * BUCKET + *i) % mod;
-    }
-    return r;
-  }
-};
+  return d;
+}
 
+vi mult_mod(const vi a, const vi b) {
+  vi c(G);
+  for (int i = 0; i < G / 2; i++) {
+    for (ll j = 0; j < G / 2; j++) {
+      c[i + j] += a[i] * b[j];
+    }
+  }
+  ll r = 0;
+  for (int i = G - 1; i >= 0; i--) {
+    // r = () % MOD;
+    r = (r * 100 + c[i]) % MOD;
+  }
+  return to_v(r);
+}
 
-bigint power(const bigint& base, const ll p) {
+vi power(vi base, const ll p) {
   if (p == 1) return base;
-  bigint t = power(base, p / 2);
-  auto a = t;
-  a = mod(a * t, MOD);
-  if (p % 2 == 1) a = mod(a * base, MOD);
+  auto t = power(base, p / 2);
+  auto a = mult_mod(t, t);
+  if (p % 2 == 1) a = mult_mod(a, base);
   return a;
 }
 
@@ -149,8 +60,15 @@ int main() {
     cin >> r >> c;
     ll p = (r * c) / 2;
     ll q = r * c - p;
-    bigint answer = power(bigint(p), q - 1);
-    answer = mod(answer * power(bigint(q), p - 1), MOD);
-    cout << answer << endl;
+    auto answer = power(to_v(p), q - 1);
+    answer = mult_mod(answer, power(to_v(q), p - 1));
+    int i = G - 1;
+    while (i > 0 && answer[i] == 0) i--;
+    while (i >= 0) {
+      cout << answer[i] << setw(2) << setfill('0');
+      i--;
+    }
+    cout << setw(0);
+    cout << endl;
   }
 }
