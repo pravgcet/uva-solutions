@@ -26,13 +26,23 @@ llu dp(llu mask) {
   ll i = 0;
   llu r = 0;
   while ((mask & (1ull << i)) == 0) i++;
+  vll v;
   for (ll j = i + 1; j < 64; j++) {
     if (mask & (1ull << j)) {
-      llu m = (mask ^ (1ull << i)) ^ (1ull << j);
-      if (icpc[i][j - i - 1] < r) continue;
-      r = max(r, min(icpc[i][j - i - 1], dp(m)));
+      v.emplace_back(j);
     }
   }
+
+  sort(v.begin(), v.end(), [&] (const ll a, const ll b) {
+    return icpc[i][a - i - 1] > icpc[i][b - i - 1];
+  });
+
+  for (auto j : v) {
+    llu m = (mask ^ (1ull << i)) ^ (1ull << j);
+    if (icpc[i][j - i - 1] < r) continue;
+    r = max(r, min(icpc[i][j - i - 1], dp(m)));
+  }
+
   return DP[mask] = r;
 }
 
