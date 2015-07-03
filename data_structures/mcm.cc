@@ -26,10 +26,14 @@ using pnode = shared_ptr<node>;
 using pedge = shared_ptr<edge>;
 using graph = vector<pnode>;
 
+bool visualize = false;
+
+ll _edge_id = 0;
 struct edge {
   pnode _to;
   pedge opposite;
   bool matched, visited;
+  ll id;
 
   pnode to();
   pnode from() { return opposite->to(); }
@@ -86,7 +90,8 @@ pnode edge::to() {
 void connect(pnode &a, pnode &b) {
   pedge ea = make_shared<edge>();
   pedge eb = make_shared<edge>();
-  ea->_to = b; ea->opposite = eb;
+  _edge_id++;
+  ea->id = _edge_id; ea->_to = b; ea->opposite = eb;
   eb->_to = a; eb->opposite = ea;
   a->adjusted.emplace_back(ea);
   b->adjusted.emplace_back(eb);
@@ -133,19 +138,21 @@ graph random_graph() {
 }
 
 // output graph in graphviz format
-ostream& print_graph(ostream& s, graph& g) {
-  s << "graph {";
+void print_graph(graph& g) {
+  cout << "function initialize_data() { nodes.add([";
+  for (auto u : g) {
+    cout << "{id: " << u->id <<  ", label: '" << u->id <<  "'},";
+  }
+  cout << "]); edges.add([";
   for (auto u : g) {
     for (auto e : u->out()) {
-      auto v = e->to();
-      if (v->id < u->id) continue;
-      s << u->id << " -- " << v->id;
-      if (e->matched) s << " [style=bold,color=red]";
-      s << ";" << endl;
+      if (e->id == 0) continue;
+      cout << "{id: " << e->id
+      << ", from: " << e->from()->id
+      << ", to: "<< e->to()->id <<"},";
     }
   }
-  s << "}";
-  return s;
+  cout << "]); network.stabilize();}" << endl;
 }
 
 pair<ll, pedge> dp(graph& g, llu mask, map<llu, pair<ll, pedge>>& memo) {
@@ -189,13 +196,11 @@ ll max_dp_matching(graph& g) {
 vector<pedge> find_augmenting_path(graph& g);
 ll _blossom_id = 0;
 vector<pedge> process_blossom(graph& g, const pedge connect) {
-  cerr << '2';
   _blossom_id++;
   ll blossom_id = _blossom_id;
   auto blossom = make_shared<node>();
   auto u = connect->from();
   auto w = connect->to();
-  cerr << "T";
   while (u->age > w->age) {
     blossom->down.emplace_back(u);
     u = u->back->from();
@@ -204,38 +209,32 @@ vector<pedge> process_blossom(graph& g, const pedge connect) {
     blossom->down.emplace_back(w);
     w = w->back->from();
   }
-  cerr << "U[" << u->age << "@" << u->tree_no << " " << w->age << "@" << w->tree_no << "]";
   while (u != w) {
-    cerr << "+[" << u->id << " " << u->age << "@" << u->tree_no << " "
-      << w->id << " " <<  w->age << "@" << w->tree_no << "]";
     blossom->down.emplace_back(w);
     blossom->down.emplace_back(u);
     if (!u->back || !w->back) {
-      cout << endl;
-      print_graph(cout, g) << endl;
+      // cout << "" << endl;
+
+      // print_graph(cout, g) << endl;
     }
     assert(u->back);
     assert(w->back);
     u = u->back->from();
     w = w->back->from();
   }
-  cerr << "S";
   blossom->down.emplace_back(w);
   for (auto v : blossom->down) {
     v->up = blossom;
     v->blossom_id = blossom_id;
   }
   g.emplace_back(blossom);
-  cerr << "Q";
   auto path = find_augmenting_path(g);
-  cerr << "W";
   g.pop_back();
   for (auto v : blossom->down) {
     v->up = NULL;
     v->age = 0;
     v->back = NULL;
   }
-  cerr << "E";
   vector<pnode> border;
   for (auto e : path) {
     if (e->to()->blossom_id == blossom_id) border.emplace_back(e->to());
@@ -247,7 +246,6 @@ vector<pedge> process_blossom(graph& g, const pedge connect) {
     assert(border.size() < 3);
   }
   queue<pnode> q;
-  cerr << "R";
   q.emplace(border[0]);
   border[0]->age = 1;
   auto f = border[0];
@@ -271,7 +269,6 @@ vector<pedge> process_blossom(graph& g, const pedge connect) {
 }
 
 vector<pedge> find_augmenting_path(graph& g) {
-  cerr << '1';
   ll tree_no = 1;
   queue<pnode> q;
   for (auto u : g) {
@@ -289,21 +286,16 @@ vector<pedge> find_augmenting_path(graph& g) {
     q.emplace(u);
     u->tree_no = tree_no++;
   }
-  cerr << '3';
   vector<pedge> path;
   while (!q.empty()) {
-    cerr << '4';
     auto u = q.front(); q.pop();
     for (auto e : u->out()) {
-      cerr << '5';
       if (e->visited || e->opposite->visited) continue;
       e->visited = true;
       u->visited = true;
       e->opposite->visited = true;
       auto w = e->to();
-      cerr << '6';
       if (w->tree_no == 0) {
-        cerr << '7';
         pnode x;
         for (auto y : w->out()) {
           if (y->matched) {
@@ -322,24 +314,15 @@ vector<pedge> find_augmenting_path(graph& g) {
         q.emplace(x);
         continue;
       }
-      cerr << '8';
       if (w->age % 2 == 1) continue;
-      cerr << '9';
       if (w->tree_no != u->tree_no) {
-        cerr << 'A';
         path.emplace_back(e);
-        cerr << "A0";
         auto p = u->path_to_root();
-        cerr << "A1";
         path.insert(path.end(), p.begin(), p.end());
-        cerr << "A2";
         p = w->path_to_root();
-        cerr << "A3";
         path.insert(path.end(), p.begin(), p.end());
-        cerr << "A4";
         return path;
       }
-      cerr << 'B';
       return process_blossom(g, e);
     }
   }
@@ -365,13 +348,14 @@ ll blossom_mcm(graph& g) {
 int main() {
   ios_base::sync_with_stdio(false); cin.tie(0);
   ll a, b;
-  for (ll i = 0; i < 100; i++) {
+  for (ll i = 0; i < 1; i++) {
     auto g = random_graph();
+    print_graph(g);
     a = max_dp_matching(g);
     b = blossom_mcm(g);
     if (a != b) {
-      // cout << a << " ? " << b << endl;
-      // print_graph(cout, g) << endl;
+      cout << a << " ? " << b << endl;
+
       // break;
     }
   }
