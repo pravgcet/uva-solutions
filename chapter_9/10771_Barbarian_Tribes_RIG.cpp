@@ -36,7 +36,7 @@ string random_string(int length) {
 
 int main() {
   ios_base::sync_with_stdio(false); cin.tie(0);
-  ll tcc = 2000;
+  ll tcc = 200;
   for (ll tc = 0; tc < tcc; tc++) {
     ll sum = random_in_range(1, 2000);
     ll n = random_in_range(0, sum);
