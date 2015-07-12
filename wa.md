@@ -21,7 +21,7 @@ reasons of WA
 10878 - output format
 343 - off by one in input
 389 - java turns out to be too slow, ingnored PE in c++
-10235 - hasty ready of statement
+10235 - hasty read of statement
 10139 - wrong solution
 11728 - wrong solution (subsolution was not independed as first assumed)
 10212 - wrong solution
@@ -30,3 +30,4 @@ reasons of WA
 815 - not so easy to solve with integers because of rounding
 1111 - wrong implementation of standard algorithm
 11198 - sloppy implementation
+10316 - misunderstand statement
