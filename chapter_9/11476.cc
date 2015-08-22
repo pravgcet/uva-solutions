@@ -48,20 +48,14 @@ ll g(ll x, ll n) {
 }
 
 ll pollard_rho(ll n) {
-  // ll i = 1, k = 2;
-  // ll x = 2, y = 2;
+  ll i = 0, k = 2;
+  ll x = 3, y = 3;
   ll d = 1;
-  vll v;
-  v.emplace_back(2);
-  ll px = 0;
   while (d == 1) {
-    // i++;
-    px++;
-    // x = g(x, n);
-    v.emplace_back(g(v.back(), n));
-    v.emplace_back(g(v.back(), n));
-    //y = g(g(y, n), n);
-    d = gcd(abs(v.back() - v[px]), n); // just mod
+    i++;
+    x = g(x, n);
+    d = gcd(abs(x - y), n);
+    if (i == k) { y = x; k *= 2; }
   }
   return d;
 }
@@ -82,19 +76,67 @@ vll factorize_to_primes(ll n) {
   return factors;
 }
 
+
+default_random_engine source(random_device{}());
+
+ll random_in_range(ll a, ll b) {
+  return uniform_int_distribution<ll>(a, b)(source);
+}
+
+bool random_bool() {
+  return random_in_range(0, 1) == 1;
+}
+
+string random_string(int length) {
+  string s = "";
+  string an = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  for (int i = 0; i < length; i++) {
+    s += an[random_in_range(0, an.size() - 1)];
+  }
+  return s;
+}
+
+bool complex_test(ll a, ll n) {
+  ll c = n - 1;
+  ll m = 1;
+  ll k = 0;
+  while (c >= m) {
+    k++;
+    m <<= 1;
+  }
+  m >>= 1;
+  ll d = 1;
+  for (ll i = 0; i < k; i++) {
+    ll x = d;
+    d = mult_mod(d, d, n);
+    if (d == 1 && x != 1 && x != n - 1) return true;
+    if (c & m) d = mult_mod(d, a, n);
+    m >>= 1;
+  }
+  return (d != 1);
+}
+
+bool primality_test(ll n, ll trials) {
+  for (ll i = 0; i < trials; i++) {
+    ll a = random_in_range(2, n - 1);
+    if (complex_test(a, n)) return false;
+  }
+  return true;
+}
+
 vll probablity_factorization(ll n) {
   vll factors = factorize_to_primes(n);
   n = factors.back(); factors.pop_back();
-  ll f = pollard_rho(n);
-  // ll f = n;
-  // auto s = factorize_to_primes(f);
-  factors.emplace_back(f);
-  n /= f;
+  if (!primality_test(n, 3)) {
+    ll f = pollard_rho(n);
+    factors.emplace_back(f);
+    n /= f;
+  }
   if (n != 1) factors.emplace_back(n);
   return factors;
 }
 
-const ll MAX_PRIME = 1000000;
+const ll MAX_PRIME = 100000;
 vll sieve_primes() {
   bitset<MAX_PRIME + 1> b;
   vll primes;
