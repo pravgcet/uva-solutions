@@ -29,12 +29,9 @@ ll lcm(ll a, ll b) {
   return a * b / gcd(a, b);
 }
 
+// (a * b) % mod, safe for ll near max
 ll mult_mod(ll a, ll b, ll mod) {
-  // a = a % mod;
-  // b = b % mod;
-  if (a < 100000000 && b < 100000000) return (a * b) % mod;
   ll x = 0;
-  // a = a % mod;
   while (b) {
     if (b % 2) x = (x + a) % mod;
     a = (a * 2) % mod;
@@ -43,26 +40,7 @@ ll mult_mod(ll a, ll b, ll mod) {
   return x;
 }
 
-ll g(ll x, ll n) {
-  return (mult_mod(x, x, n) + 1) % n;
-}
-
-ll pollard_rho(ll n) {
-  ll i = 0, k = 2;
-  ll x = 3, y = 3;
-  ll d = 1;
-  while (d == 1) {
-    i++;
-    x = g(x, n);
-    d = gcd(abs(x - y), n);
-    if (i == k) { y = x; k *= 2; }
-  }
-  return d;
-}
-
-vll primes;
-
-vll factorize_to_primes(ll n) {
+vll factorize_to_primes(ll n, vll& primes) {
   vll factors;
   auto p = primes.begin();
   while (p != primes.end() && (*p) * (*p) <= n) {
@@ -96,43 +74,60 @@ string random_string(int length) {
   return s;
 }
 
-bool complex_test(ll a, ll n) {
-  ll c = n - 1;
-  ll m = 1;
-  ll k = 0;
-  while (c >= m) {
-    k++;
-    m <<= 1;
-  }
-  m >>= 1;
-  ll d = 1;
-  for (ll i = 0; i < k; i++) {
-    ll x = d;
-    d = mult_mod(d, d, n);
-    if (d == 1 && x != 1 && x != n - 1) return true;
-    if (c & m) d = mult_mod(d, a, n);
-    m >>= 1;
-  }
-  return (d != 1);
-}
-
+// Miller-Rabin primality test | mult_mod, random
 bool primality_test(ll n, ll trials) {
+  auto complex_test = [] (ll a, ll n) {
+    ll c = n - 1;
+    ll m = 1;
+    ll k = 0;
+    while (c >= m) {
+      k++;
+      m <<= 1;
+    }
+    m >>= 1;
+    ll d = 1;
+    for (ll i = 0; i < k; i++) {
+      ll x = d;
+      d = mult_mod(d, d, n);
+      if (d == 1 && x != 1 && x != n - 1) return true;
+      if (c & m) d = mult_mod(d, a, n);
+      m >>= 1;
+    }
+    return (d != 1);
+  };
+
   for (ll i = 0; i < trials; i++) {
-    ll a = random_in_range(2, n - 1);
+    ll a = 2 + i;
     if (complex_test(a, n)) return false;
   }
   return true;
 }
 
-vll probablity_factorization(ll n) {
-  vll factors = factorize_to_primes(n);
-  n = factors.back(); factors.pop_back();
-  if (!primality_test(n, 3)) {
-    ll f = pollard_rho(n);
-    factors.emplace_back(f);
-    n /= f;
+// factorize to primes with pollard_rho function
+// primes up to pow(max, 1/3)
+vll probablity_factorization(ll n, vll& primes) {
+  auto pollard_rho = [](ll n) -> ll {
+    ll i = 0, k = 2;
+    ll x = 3, y = 3;
+    ll d = 1;
+    while (d == 1) {
+      i++;
+      x = (mult_mod(x, x, n) + 1) % n;
+      d = gcd(abs(x - y), n);
+      if (i == k) { y = x; k *= 2; }
+    }
+    return d;
+  };
+  vll factors = factorize_to_primes(n, primes);
+  if (factors.back() > 10000000000) {
+    n = factors.back(); factors.pop_back();
+    if (!primality_test(n, 1)) {
+      ll f = pollard_rho(n);
+      factors.emplace_back(f);
+      n /= f;
+    }
+    if (n != 1) factors.emplace_back(n);
   }
-  if (n != 1) factors.emplace_back(n);
   return factors;
 }
 
@@ -151,12 +146,12 @@ vll sieve_primes() {
 
 int main() {
   ios_base::sync_with_stdio(false); cin.tie(0);
-  primes = sieve_primes();
+  auto primes = sieve_primes();
   int tcc; cin >> tcc;
   for (int tc = 1; tc <= tcc; tc++) {
     ll n; cin >> n;
     cout << n << " = ";
-    auto factors = probablity_factorization(n);
+    auto factors = probablity_factorization(n, primes);
     sort(factors.begin(), factors.end());
     ll f = 0, c = 0;
     for (auto k : factors) {
