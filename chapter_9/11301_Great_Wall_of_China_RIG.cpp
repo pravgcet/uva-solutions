@@ -40,7 +40,7 @@ int main() {
   ll cases = 10;
   for (ll i = 0; i < cases; i++) {
     ll n = random_in_range(3, 1000);
-    if (i == cases - 1) n = 1000;
+    // if (i == cases - 1) n = 1000;
     vll starts = {0, 1, 2, 3, 4};
     cout << n << endl;
     for (ll j = 0; j < 5; j++) swap(starts[j], starts[random_in_range(j, 4)]);
@@ -56,4 +56,5 @@ int main() {
       cout << endl;
     }
   }
+  cout << 0 << endl;
 }

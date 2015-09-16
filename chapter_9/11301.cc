@@ -48,7 +48,7 @@ void connect(pnode &a, pnode &b, ll w, ll cost) {
   b->adjusted.emplace_back(eb);
 }
 
-void sssp(pnode start, graph& g) {
+void sssp(pnode start, graph& g, bool initial) {
   for (auto u : g) {
     u->potential = INF;
     u->in_queue = false;
@@ -73,18 +73,18 @@ void sssp(pnode start, graph& g) {
       q.emplace(v);
     }
   }
-  // update potentials
+  //update potentials
   for (auto u : g) {
     for (auto e : u->adjusted) {
-      if (e->original_capacity == 0) continue;
+      if (e->capacity == 0) continue;
       e->cost += e->from->potential - e->to->potential;
     }
   }
 }
 
 ll min_cost_max_flow(graph& g, pnode s, pnode t) {
+  sssp(s, g, true);
   while (true) {
-    sssp(s, g);
     if (t->potential == INF) break;
     // augment
     stack<pedge> a;
@@ -100,6 +100,7 @@ ll min_cost_max_flow(graph& g, pnode s, pnode t) {
       e->capacity -= m;
       e->opposite->capacity += m;
     }
+    sssp(s, g, false);
   }
   ll cost = 0;
   for (auto u : g) {
@@ -113,7 +114,7 @@ ll min_cost_max_flow(graph& g, pnode s, pnode t) {
 int main() {
   ios_base::sync_with_stdio(false); cin.tie(0);
   ll n;
-  while (cin >> n) {
+  while (cin >> n, n) {
     graph g;
     auto source = make_shared<node>(); g.emplace_back(source);
     auto sink = make_shared<node>(); g.emplace_back(sink);
@@ -129,14 +130,14 @@ int main() {
         g.emplace_back(OUT[i][j]);
       }
     }
-    const int dx[] = { 1, -1, 0};
-    const int dy[] = { 0, 0, 1};
+    const int dx[] = { 1, -1, 0, 0};
+    const int dy[] = { 0, 0, 1, -1};
     for (ll i = 0; i < 5; i++) {
       for (ll j = 0; j < n; j++) {
-        for (ll k = 0; k < 3; k++) {
+        for (ll k = 0; k < 4; k++) {
           ll x = i + dx[k];
           ll y = j + dy[k];
-          if (x < 0 || x >= 5 || y >= n) continue;
+          if (x < 0 || x >= 5 || y >= n || y < 0) continue;
           connect(OUT[i][j], IN[x][y], 1, 0);
         }
       }
