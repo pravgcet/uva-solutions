@@ -14,8 +14,8 @@ const l e5 = 100000, e6 = 1000000, e7 = 10000000, e9 = 1000000000;
 
 
 // base and base_digits must be consistent
-const l base = 1000000000;
-const l base_digits = 9;
+const l base = 1000000;
+const l base_digits = 6;
 struct bigint {
   vector<l> a;
   l sign;
@@ -301,6 +301,54 @@ struct bigint {
     res.trim();
     return res;
   }
+
+  static vl karatsubaSquare(const vl &a) {
+    l n = a.size();
+    vl res(n + n);
+    if (n <= 32) {
+      for (l i = 0; i < n; i++)
+        for (l j = 0; j < n; j++) res[i + j] += a[i] * a[j];
+      return res;
+    }
+
+    l k = n >> 1;
+    vl a1(a.begin(), a.begin() + k);
+    vl a2(a.begin() + k, a.end());
+
+    vl a1b1 = karatsubaSquare(a1);
+    vl a2b2 = karatsubaSquare(a2);
+
+    for (l i = 0; i < k; i++) a2[i] += a1[i];
+
+    vl r = karatsubaSquare(a2);
+    l z = (l)a1b1.size();
+    for (l i = 0; i < z; i++) r[i] -= a1b1[i];
+    z = (l)a2b2.size();
+    for (l i = 0; i < z; i++) r[i] -= a2b2[i];
+    z = (l)r.size();
+    for (l i = 0; i < z; i++) res[i + k] += r[i];
+    z = (l)a1b1.size();
+    for (l i = 0; i < z; i++) res[i] += a1b1[i];
+    z = (l)a2b2.size();
+    for (l i = 0; i < z; i++) res[i + n] += a2b2[i];
+    return res;
+  }
+
+  bigint square() const {
+    vl a = convert_base(this->a, base_digits, 6);
+    while (a.size() & (a.size() - 1)) a.push_back(0);
+    vll c = karatsubaSquare(a);
+    bigint res;
+    res.sign = 1;
+    for (l i = 0, carry = 0; i < (l)c.size(); i++) {
+      l cur = c[i] + carry;
+      res.a.push_back((l)(cur % 1000000));
+      carry = (l)(cur / 1000000);
+    }
+    res.a = convert_base(res.a, 6, base_digits);
+    res.trim();
+    return res;
+  }
 };
 
 int main() {
@@ -315,7 +363,7 @@ int main() {
     while (step > 0) {
       step /= 2;
       auto mid = x + step;
-      auto t = mid * mid;
+      auto t = mid.square();
       if (t == a) {
         x = mid;
         break;
