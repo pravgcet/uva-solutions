@@ -167,6 +167,17 @@ struct bigint {
     if (a.empty()) sign = 1;
   }
 
+  void normalize() {
+    l c = 0;
+    for (auto &i : a) {
+      i += c;
+      c = i / base;
+      i %= base;
+    }
+    if (c) a.push_back(c);
+    trim();
+  }
+
   bool isZero() const { return a.empty() || (a.size() == 1 && !a[0]); }
 
   bigint operator-() const {
@@ -358,19 +369,47 @@ int main() {
     bigint a;
     cin >> a;
     // cout << a << endl;
-    bigint step = a;
-    bigint x(1);
-    while (step > 0) {
-      step /= 2;
-      auto mid = x + step;
-      auto t = mid.square();
-      if (t == a) {
-        x = mid;
-        break;
+    bigint d;
+    l k = 0;
+    while (2 * k < (l)a.a.size()) {
+      k++;
+      d.a.push_back(0);
+    }
+    d.a.push_back(1);
+    bigint x(0);
+    bigint x2(0);
+    while (k >= 0) {
+      // cerr << "d = " << d << endl;
+      // cerr << "x = " << x << endl;
+      // cerr << "x2 = " << x2 << endl;
+      bigint y2;
+      y2.a = x2.a;
+      l v = d.a.back();
+      y2.a.resize(max((l)y2.a.size(), k + (l)x.a.size()));
+      for (size_t i = 0; i < x.a.size(); i++) {
+        y2.a[i + k] += 2 * x.a[i] * v;
       }
-      if (t < a) {
-        x = mid + 1;
+      y2.a.resize(max((l)y2.a.size(), 2 * k + 1));
+      y2.a[2 * k] += v * v;
+      y2.normalize();
+      // cerr << "y2 = " << y2 << endl;
+      if (y2 > a) {
+        // cerr << " > " << endl;
+        v /= 2;
+        if (v == 0) {
+          k--;
+          d.a.resize(k + 1);
+          d.a.back() = base / 2;
+        } else {
+          d.a.back() = v;
+        }
+        continue;
       }
+      x.a.resize(max((l)x.a.size(), k + 1));
+      x.a[k] += v;
+      x.normalize();
+      swap(x2, y2);
+      if (x2 == a) break;
     }
     cout << x << endl;
   }
