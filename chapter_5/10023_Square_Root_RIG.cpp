@@ -327,7 +327,7 @@ struct bigint {
 
 int main() {
   ios_base::sync_with_stdio(false); cin.tie(0);
-  l n = 10000;
+  l n = 10;
   cout << n << endl << endl;
   string m = "1";
   for (l i = 0; i < 1000; i++) m += "0";
