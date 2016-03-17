@@ -14,8 +14,8 @@ const l e5 = 100000, e6 = 1000000, e7 = 10000000, e9 = 1000000000;
 
 
 // base and base_digits must be consistent
-const l base = 1000000;
-const l base_digits = 6;
+const l base = 1000000000;
+const l base_digits = 9;
 struct bigint {
   vector<l> a;
   l sign;
@@ -174,7 +174,10 @@ struct bigint {
       c = i / base;
       i %= base;
     }
-    if (c) a.push_back(c);
+    while (c) {
+      a.push_back(c % base);
+      c /= base;
+    }
     trim();
   }
 
@@ -362,29 +365,48 @@ struct bigint {
   }
 };
 
+const string AZ = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const string az = "abcdefghijklmnopqrstuvwxyz";
+const string d09 = "0123456789";
+
+default_random_engine source(random_device{}());
+
+l random_in_range(l a, l b) {
+  return uniform_int_distribution<l>(a, b)(source);
+}
+
+bool random_bool() {
+  return random_in_range(0, 1) == 1;
+}
+
+string random_string(int length, string source) {
+  string s = "";
+  for (int i = 0; i < length; i++) {
+    s += source[random_in_range(0, source.size() - 1)];
+  }
+  return s;
+}
 int main() {
   ios_base::sync_with_stdio(false); cin.tie(0);
   l tcc; cin >> tcc;
   while (tcc--) {
-    bigint a;
-    cin >> a;
-    // cout << a << endl;
-    bigint d;
+    bigint A;
+    cin >> A;
+  // for (l ii = 0 ; ii < 10000; ii++) {
+  //   l length = random_in_range(1, 500);
+  //   bigint r(random_string(length, d09));
+  //   bigint A = r * r;
     l k = 0;
-    while (2 * k < (l)a.a.size()) {
+    while (2 * k < (l)A.a.size()) {
       k++;
-      d.a.push_back(0);
     }
-    d.a.push_back(1);
+    l v = base;
     bigint x(0);
     bigint x2(0);
-    while (k >= 0) {
-      // cerr << "d = " << d << endl;
-      // cerr << "x = " << x << endl;
-      // cerr << "x2 = " << x2 << endl;
+    while (true) {
       bigint y2;
       y2.a = x2.a;
-      l v = d.a.back();
+      assert(v > 0);
       y2.a.resize(max((l)y2.a.size(), k + (l)x.a.size()));
       for (size_t i = 0; i < x.a.size(); i++) {
         y2.a[i + k] += 2 * x.a[i] * v;
@@ -392,25 +414,27 @@ int main() {
       y2.a.resize(max((l)y2.a.size(), 2 * k + 1));
       y2.a[2 * k] += v * v;
       y2.normalize();
-      // cerr << "y2 = " << y2 << endl;
-      if (y2 > a) {
-        // cerr << " > " << endl;
-        v /= 2;
-        if (v == 0) {
+      if (y2 > A) {
+        if (v == 1) {
+          if (k == 0) break;
           k--;
-          d.a.resize(k + 1);
-          d.a.back() = base / 2;
-        } else {
-          d.a.back() = v;
+          v = base;
         }
+        v /= 2;
         continue;
       }
       x.a.resize(max((l)x.a.size(), k + 1));
       x.a[k] += v;
       x.normalize();
-      swap(x2, y2);
-      if (x2 == a) break;
+      swap(x2.a, y2.a);
+      if (x2 == A) break;
     }
+    // if (x * x != A) {
+    //   cout << A << endl;
+    //   break;
+    // }
+     // assert(x * x == A);
     cout << x << endl;
+    if (tcc) cout << endl;
   }
 }
