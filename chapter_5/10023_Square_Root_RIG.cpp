@@ -34,11 +34,10 @@ string random_string(int length, string source) {
   return s;
 }
 
-
-// base and base_digits must be consistent
-const l base = 1000000000;
-const l base_digits = 9;
 struct bigint {
+  // base and base_digits must be consistent
+  l base = 1000000000;
+  static const l base_digits = 9;
   vector<l> a;
   l sign;
 
@@ -111,6 +110,7 @@ struct bigint {
   }
 
   friend pair<bigint, bigint> divmod(const bigint &a1, const bigint &b1) {
+    auto base = a1.base;
     l norm = base / (b1.a.back() + 1);
     bigint a = a1.abs() * norm;
     bigint b = b1.abs() * norm;
@@ -244,7 +244,7 @@ struct bigint {
     if (v.sign == -1) stream << '-';
     stream << (v.a.empty() ? 0 : v.a.back());
     for (l i = (l)v.a.size() - 2; i >= 0; --i)
-      stream << setw(base_digits) << setfill('0') << v.a[i];
+      stream << setw(bigint::base_digits) << setfill('0') << v.a[i];
     return stream;
   }
 
@@ -327,7 +327,7 @@ struct bigint {
 
 int main() {
   ios_base::sync_with_stdio(false); cin.tie(0);
-  l n = 10;
+  l n = 1000;
   cout << n << endl << endl;
   string m = "1";
   for (l i = 0; i < 1000; i++) m += "0";

@@ -12,21 +12,21 @@ const int INF = numeric_limits<int>::max();
 const double EPS = 1e-10;
 const l e5 = 100000, e6 = 1000000, e7 = 10000000, e9 = 1000000000;
 
-
-// base and base_digits must be consistent
-const l base = 1000000000;
-const l base_digits = 9;
 struct bigint {
+  // base and base_digits must be consistent
+  l sign = 1;
+  l base = 1 << 4;
+  static const l base_digits = 9;
   vector<l> a;
-  l sign;
 
-  bigint() : sign(1) {}
+  bigint() {}
 
-  bigint(long long v) { *this = v; }
+  explicit bigint(long long v) { *this = v; }
 
-  bigint(const string &s) { read(s); }
+  explicit bigint(const string &s) { read(s); }
 
   void operator=(const bigint &v) {
+    base = v.base;
     sign = v.sign;
     a = v.a;
   }
@@ -89,6 +89,7 @@ struct bigint {
   }
 
   friend pair<bigint, bigint> divmod(const bigint &a1, const bigint &b1) {
+    auto base = a1.base;
     l norm = base / (b1.a.back() + 1);
     bigint a = a1.abs() * norm;
     bigint b = b1.abs() * norm;
@@ -97,12 +98,12 @@ struct bigint {
 
     for (l i = a.a.size() - 1; i >= 0; i--) {
       r *= base;
-      r += a.a[i];
+      r += bigint(a.a[i]);
       l s1 = r.a.size() <= b.a.size() ? 0 : r.a[b.a.size()];
       l s2 = r.a.size() <= b.a.size() - 1 ? 0 : r.a[b.a.size() - 1];
       l d = ((long long)base * s1 + s2) / b.a.back();
       r -= b * d;
-      while (r < 0) r += b, --d;
+      while (r < bigint(0)) r += b, --d;
       q.a[i] = d;
     }
 
@@ -210,7 +211,8 @@ struct bigint {
 
   void read(const string &s) {
     sign = 1;
-    a.clear();
+    vl ta;
+    ta.clear();
     l pos = 0;
     while (pos < (l)s.size() && (s[pos] == '-' || s[pos] == '+')) {
       if (s[pos] == '-') sign = -sign;
@@ -220,9 +222,9 @@ struct bigint {
       l x = 0;
       for (l j = max(pos, i - base_digits + 1); j <= i; j++)
         x = x * 10 + s[j] - '0';
-      a.push_back(x);
+      ta.push_back(x);
     }
-    trim();
+    from_base10(ta);
   }
 
   friend istream &operator>>(istream &stream, bigint &v) {
@@ -234,18 +236,19 @@ struct bigint {
 
   friend ostream &operator<<(ostream &stream, const bigint &v) {
     if (v.sign == -1) stream << '-';
-    stream << (v.a.empty() ? 0 : v.a.back());
-    for (l i = (l)v.a.size() - 2; i >= 0; --i)
-      stream << setw(base_digits) << setfill('0') << v.a[i];
+    auto ta = v.to_base10();
+    stream << (ta.empty() ? 0 : ta.back());
+    for (l i = (l)ta.size() - 2; i >= 0; --i)
+      stream << setw(base_digits) << setfill('0') << ta[i];
     return stream;
   }
 
-  static vector<l> convert_base(const vector<l> &a, l old_digits,
+  static vl convert_base(const vector<l> &a, l old_digits,
                                   l new_digits) {
-    vector<long long> p(max(old_digits, new_digits) + 1);
+    vl p(max(old_digits, new_digits) + 1);
     p[0] = 1;
     for (l i = 1; i < (l)p.size(); i++) p[i] = p[i - 1] * 10;
-    vector<l> res;
+    vl res;
     long long cur = 0;
     l cur_digits = 0;
     for (l i = 0; i < (l)a.size(); i++) {
@@ -261,8 +264,6 @@ struct bigint {
     while (!res.empty() && !res.back()) res.pop_back();
     return res;
   }
-
-  typedef vector<long long> vll;
 
   static vl karatsubaMultiply(const vl &a, const vl &b) {
     l n = a.size();
@@ -303,7 +304,7 @@ struct bigint {
     while (a.size() < b.size()) a.push_back(0);
     while (b.size() < a.size()) b.push_back(0);
     while (a.size() & (a.size() - 1)) a.push_back(0), b.push_back(0);
-    vll c = karatsubaMultiply(a, b);
+    vl c = karatsubaMultiply(a, b);
     bigint res;
     res.sign = sign * v.sign;
     for (l i = 0, carry = 0; i < (l)c.size(); i++) {
@@ -347,21 +348,78 @@ struct bigint {
     for (l i = 0; i < z; i++) res[i + n] += a2b2[i];
     return res;
   }
-
-  bigint square() const {
-    vl a = convert_base(this->a, base_digits, 6);
-    while (a.size() & (a.size() - 1)) a.push_back(0);
-    vll c = karatsubaSquare(a);
-    bigint res;
-    res.sign = 1;
-    for (l i = 0, carry = 0; i < (l)c.size(); i++) {
-      l cur = c[i] + carry;
-      res.a.push_back((l)(cur % 1000000));
-      carry = (l)(cur / 1000000);
+/*
+  bigint to_base(l shift) {
+    vl b;
+    l new_base == 1 << 4;
+    bigint y(1);
+    y.base = new_base;
+    bigint result;
+    result.base = new_base;
+    for (auto i : a) {
+      result += y * i;
+      y *= base;
     }
-    res.a = convert_base(res.a, 6, base_digits);
-    res.trim();
-    return res;
+    result.normalize();
+    return result;
+  }
+*/
+  void from_base10(vl& b) {
+    bigint y(1);
+    for (auto i : b) {
+      *this += y * i;
+      y *= e9;
+    }
+    normalize();
+  }
+
+  static void normalize10(vl& a) {
+    l c = 0;
+    for (auto &i : a) {
+      i += c;
+      c = i / e9;
+      i %= e9;
+    }
+    while (c) {
+      a.push_back(c % e9);
+      c /= e9;
+    }
+    while (!a.empty() && a.back() == 0) a.pop_back();
+  }
+
+  static vl mult(vl& a, l b) {
+    vl c;
+    for (auto i : a) c.push_back(i * b);
+    normalize10(c);
+    return c;
+  }
+
+  static void add_to(vl& a, vl& b) {
+    size_t s = max(a.size(), b.size());
+    a.resize(s);
+    b.resize(s);
+    for (size_t i = 0; i < s; i++) a[i] += b[i];
+    normalize10(a);
+  }
+
+  vl to_base10() const {
+    vl y;
+    y.push_back(1);
+    vl result;
+    for (auto i : a) {
+      auto t = mult(y, i);
+      add_to(result, t);
+      y = mult(y, base);
+    }
+    normalize10(result);
+    return result;
+  }
+
+  void debug(ostream& s) {
+    s << "base = " << base << endl;
+    s << a.size() << " buckets" << endl;
+    for (auto i : a) s << i << " ";
+    s << endl;
   }
 };
 
@@ -386,26 +444,37 @@ string random_string(int length, string source) {
   }
   return s;
 }
+
 int main() {
   ios_base::sync_with_stdio(false); cin.tie(0);
-  l tcc; cin >> tcc;
-  while (tcc--) {
-    bigint A;
-    cin >> A;
-  // for (l ii = 0 ; ii < 10000; ii++) {
-  //   l length = random_in_range(1, 500);
-  //   bigint r(random_string(length, d09));
-  //   bigint A = r * r;
+  // l tcc; cin >> tcc;
+  // while (tcc--) {
+  //   bigint A;
+  //   cin >> A;
+  for (l ii = 0 ; ii < 10; ii++) {
+    l length = random_in_range(1, 10);
+    auto s = random_string(length, d09);
+    bigint r(s);
+    stringstream ss;
+    ss << r;
+    if (ss.str() != s) {
+      cout << ss.str() << " <> " << s << endl;
+    }
+    continue;
+    bigint A = r * r;
+    cout << r << " * " << r << " = " << A << endl;
     l k = 0;
     while (2 * k < (l)A.a.size()) {
       k++;
     }
-    l v = base;
+    l v = A.base;
     bigint x(0);
+    x.base = A.base;
     bigint x2(0);
+    x2.base = A.base;
     while (true) {
       bigint y2;
-      y2.a = x2.a;
+      y2.a = x2.a; y2.base = A.base;
       assert(v > 0);
       y2.a.resize(max((l)y2.a.size(), k + (l)x.a.size()));
       for (size_t i = 0; i < x.a.size(); i++) {
@@ -418,7 +487,7 @@ int main() {
         if (v == 1) {
           if (k == 0) break;
           k--;
-          v = base;
+          v = A.base;
         }
         v /= 2;
         continue;
@@ -429,12 +498,11 @@ int main() {
       swap(x2.a, y2.a);
       if (x2 == A) break;
     }
-    // if (x * x != A) {
-    //   cout << A << endl;
-    //   break;
-    // }
-     // assert(x * x == A);
-    cout << x << endl;
-    if (tcc) cout << endl;
+    if (x * x != A) {
+      cout << x << " * " << x << " = " << (x * x) << endl;
+      break;
+    }
+    // cout << x << endl;
+    // if (tcc) cout << endl;
   }
 }
