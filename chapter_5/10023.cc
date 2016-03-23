@@ -15,7 +15,9 @@ const l e5 = 100000, e6 = 1000000, e7 = 10000000, e9 = 1000000000;
 struct bigint {
   // base and base_digits must be consistent
   l sign = 1;
-  l base = 1 << 4;
+  static const l shift = 30;
+  static const l mask = (1LL << shift) - 1;
+  l base = 1LL << shift;
   static const l base_digits = 9;
   vector<l> a;
 
@@ -77,7 +79,6 @@ struct bigint {
       long long cur = a[i] * (long long)v + carry;
       carry = (l)(cur / base);
       a[i] = (l)(cur % base);
-      // asm("divl %%ecx" : "=a"(carry), "=d"(a[i]) : "A"(cur), "c"(base));
     }
     trim();
   }
@@ -297,10 +298,8 @@ struct bigint {
   }
 
   bigint operator*(const bigint &v) const {
-    vl a6 = convert_base(this->a, base_digits, 6);
-    vl b6 = convert_base(v.a, base_digits, 6);
-    vl a(a6.begin(), a6.end());
-    vl b(b6.begin(), b6.end());
+    vl a = this->a;
+    vl b = v.a;
     while (a.size() < b.size()) a.push_back(0);
     while (b.size() < a.size()) b.push_back(0);
     while (a.size() & (a.size() - 1)) a.push_back(0), b.push_back(0);
@@ -309,10 +308,9 @@ struct bigint {
     res.sign = sign * v.sign;
     for (l i = 0, carry = 0; i < (l)c.size(); i++) {
       l cur = c[i] + carry;
-      res.a.push_back((l)(cur % 1000000));
-      carry = (l)(cur / 1000000);
+      res.a.push_back((l)(cur % base));
+      carry = (l)(cur / base);
     }
-    res.a = convert_base(res.a, 6, base_digits);
     res.trim();
     return res;
   }
@@ -348,22 +346,7 @@ struct bigint {
     for (l i = 0; i < z; i++) res[i + n] += a2b2[i];
     return res;
   }
-/*
-  bigint to_base(l shift) {
-    vl b;
-    l new_base == 1 << 4;
-    bigint y(1);
-    y.base = new_base;
-    bigint result;
-    result.base = new_base;
-    for (auto i : a) {
-      result += y * i;
-      y *= base;
-    }
-    result.normalize();
-    return result;
-  }
-*/
+
   void from_base10(vl& b) {
     bigint y(1);
     for (auto i : b) {
@@ -426,6 +409,7 @@ struct bigint {
 const string AZ = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const string az = "abcdefghijklmnopqrstuvwxyz";
 const string d09 = "0123456789";
+const string d19 = "123456789";
 
 default_random_engine source(random_device{}());
 
@@ -447,34 +431,26 @@ string random_string(int length, string source) {
 
 int main() {
   ios_base::sync_with_stdio(false); cin.tie(0);
-  // l tcc; cin >> tcc;
-  // while (tcc--) {
-  //   bigint A;
-  //   cin >> A;
-  for (l ii = 0 ; ii < 10; ii++) {
-    l length = random_in_range(1, 10);
-    auto s = random_string(length, d09);
-    bigint r(s);
-    stringstream ss;
-    ss << r;
-    if (ss.str() != s) {
-      cout << ss.str() << " <> " << s << endl;
-    }
-    continue;
-    bigint A = r * r;
-    cout << r << " * " << r << " = " << A << endl;
+  l tcc; cin >> tcc;
+  while (tcc--) {
+    bigint A;
+    cin >> A;
+  // for (l ii = 0 ; ii < 100000; ii++) {
+  //   l length = random_in_range(1, 50);
+  //   auto s = random_string(1, d19) + random_string(length - 1, d09);
+  //   bigint r(s);
+  //   bigint A = r * r;
+  //   A.normalize();
     l k = 0;
     while (2 * k < (l)A.a.size()) {
       k++;
     }
     l v = A.base;
     bigint x(0);
-    x.base = A.base;
     bigint x2(0);
-    x2.base = A.base;
     while (true) {
       bigint y2;
-      y2.a = x2.a; y2.base = A.base;
+      y2.a = x2.a;
       assert(v > 0);
       y2.a.resize(max((l)y2.a.size(), k + (l)x.a.size()));
       for (size_t i = 0; i < x.a.size(); i++) {
@@ -483,6 +459,7 @@ int main() {
       y2.a.resize(max((l)y2.a.size(), 2 * k + 1));
       y2.a[2 * k] += v * v;
       y2.normalize();
+      // cerr << A << " <> " << y2 << endl;
       if (y2 > A) {
         if (v == 1) {
           if (k == 0) break;
@@ -492,17 +469,20 @@ int main() {
         v /= 2;
         continue;
       }
+      // cout << "+" << endl;
       x.a.resize(max((l)x.a.size(), k + 1));
       x.a[k] += v;
       x.normalize();
       swap(x2.a, y2.a);
       if (x2 == A) break;
     }
-    if (x * x != A) {
-      cout << x << " * " << x << " = " << (x * x) << endl;
-      break;
-    }
-    // cout << x << endl;
-    // if (tcc) cout << endl;
+    // if (x * x != A) {
+    //   (x * x).debug(cout);
+    //   A.debug(cout);
+    //   cout << x << " * " << x << " = " << (x * x) << " != " << A << endl;
+    //   break;
+    // }
+    cout << x << endl;
+    if (tcc) cout << endl;
   }
 }
