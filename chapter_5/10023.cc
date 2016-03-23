@@ -169,18 +169,18 @@ struct bigint {
     if (a.empty()) sign = 1;
   }
 
-  void normalize() {
+  void normalize(const size_t from) {
     l c = 0;
-    for (auto &i : a) {
-      i += c;
-      c = i / base;
-      i %= base;
+    for (size_t i = from; i < a.size(); i++) {
+      a[i] += c;
+      c = a[i] >> shift;
+      a[i] = a[i] & mask;
     }
     while (c) {
-      a.push_back(c % base);
-      c /= base;
+      a.push_back(c & mask);
+      c = c >> shift;
     }
-    trim();
+    // trim();
   }
 
   bool isZero() const { return a.empty() || (a.size() == 1 && !a[0]); }
@@ -353,7 +353,7 @@ struct bigint {
       *this += y * i;
       y *= e9;
     }
-    normalize();
+    normalize(0);
   }
 
   static void normalize10(vl& a) {
@@ -429,60 +429,81 @@ string random_string(int length, string source) {
   return s;
 }
 
+#define TEST
+
 int main() {
   ios_base::sync_with_stdio(false); cin.tie(0);
+#if defined(TEST)
+  l resizes = 0;
+  for (l ii = 0 ; ii < 100000; ii++) {
+    l length = random_in_range(1, 50);
+    auto s = random_string(1, d19) + random_string(length - 1, d09);
+    bigint r(s);
+    bigint A = r * r;
+    A.normalize(0);
+    A.trim();
+#else
   l tcc; cin >> tcc;
   while (tcc--) {
     bigint A;
     cin >> A;
-  // for (l ii = 0 ; ii < 100000; ii++) {
-  //   l length = random_in_range(1, 50);
-  //   auto s = random_string(1, d19) + random_string(length - 1, d09);
-  //   bigint r(s);
-  //   bigint A = r * r;
-  //   A.normalize();
-    l k = 0;
-    while (2 * k < (l)A.a.size()) {
-      k++;
-    }
-    l v = A.base;
+#endif
+    l k = (A.a.size() + 1) / 2;
+    // while (2 * k < (l)A.a.size()) {
+    //   cerr << "k++";
+    //   k++;
+    // }
+    l sv = A.shift;
     bigint x(0);
     bigint x2(0);
+    x2.a.resize(A.a.size());
     while (true) {
       bigint y2;
-      y2.a = x2.a;
-      assert(v > 0);
-      y2.a.resize(max((l)y2.a.size(), k + (l)x.a.size()));
-      for (size_t i = 0; i < x.a.size(); i++) {
-        y2.a[i + k] += 2 * x.a[i] * v;
+      l t = max(2 * k + 1, k + (l)x.a.size());
+      if (t <= A.a.size()) {
+        y2.a = x2.a;
+        // assert(v > 0);
+        // y2.a.resize(max((l)y2.a.size(), max(2 * k + 1, k + (l)x.a.size())));
+        for (size_t i = 0; i < x.a.size(); i++) {
+          y2.a[i + k] += x.a[i] << (sv + 1);
+        }
+        y2.a[2 * k] += 1LL << (sv + sv);
+        y2.normalize(k);
       }
-      y2.a.resize(max((l)y2.a.size(), 2 * k + 1));
-      y2.a[2 * k] += v * v;
-      y2.normalize();
       // cerr << A << " <> " << y2 << endl;
-      if (y2 > A) {
-        if (v == 1) {
+      if (t > A.a.size() || y2 > A) {
+        if (sv == 0) {
           if (k == 0) break;
           k--;
-          v = A.base;
+          // v = A.base;
+          sv = A.shift;
         }
-        v /= 2;
+        // v /= 2;
+        sv--;
         continue;
       }
       // cout << "+" << endl;
-      x.a.resize(max((l)x.a.size(), k + 1));
-      x.a[k] += v;
-      x.normalize();
+      if (k + 1 > x.a.size()) {
+        // cerr << ".";
+        resizes++;
+        x.a.resize(k + 1);
+      }
+      x.a[k] += (1LL << sv);
+      x.normalize(k);
       swap(x2.a, y2.a);
       if (x2 == A) break;
     }
-    // if (x * x != A) {
-    //   (x * x).debug(cout);
-    //   A.debug(cout);
-    //   cout << x << " * " << x << " = " << (x * x) << " != " << A << endl;
-    //   break;
-    // }
+  #if defined(TEST)
+    if (x * x != A) {
+      (x * x).debug(cout);
+      A.debug(cout);
+      cout << x << " * " << x << " = " << (x * x) << " != " << A << endl;
+      break;
+    }
+  #else
     cout << x << endl;
     if (tcc) cout << endl;
+  #endif
   }
+  cout << "resizes " << resizes << endl;
 }
