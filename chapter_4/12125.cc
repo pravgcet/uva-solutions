@@ -1,148 +1,133 @@
-#include <vector>
-#include <list>
-#include <map>
-#include <set>
-#include <deque>
-#include <stack>
-#include <bitset>
-#include <algorithm>
-#include <functional>
-#include <numeric>
-#include <queue>
-#include <utility>
-#include <sstream>
-#include <iostream>
-#include <iomanip>
-#include <cstdio>
-#include <cmath>
-#include <cstdlib>
-#include <ctime>
-#include <memory>
-
+#include<bits/stdc++.h>
 using namespace std;
 
-using vi = vector<int>;
-using ii = pair<int,int>;
-using ll = long long;
-using llu = unsigned long long;
+using vi = vector<int>; using vvi = vector<vi>;
+using ii = pair<int,int>; using vii = vector<ii>;
+using l = long long; using vl = vector<l>; using vvl = vector<vl>;
+using ll = pair<l,l>; using vll = vector<ll>; using vvll = vector<vll>;
+using lu = unsigned long long;
+using vb = vector<bool>; using vvb = vector<vb>;
+using vd = vector<double>; using vvd = vector<vd>;
 const int INF = numeric_limits<int>::max();
+const double EPS = 1e-10;
+const l e5 = 100000, e6 = 1000000, e7 = 10000000, e9 = 1000000000;
 
+
+// v max flow
 struct node;
 struct edge;
-
 using pnode = shared_ptr<node>;
 using pedge = shared_ptr<edge>;
+using graph = vector<pnode>;
 
 struct node {
-  bool visited;
-  int c;
-  vector<pedge> edges;
+  int age;
+  l x, y;
+  vector<pedge> adjusted;
   pedge back;
-  double x, y;
 };
 
 struct edge {
-  pedge opp;
-  int c, r;
   pnode from, to;
+  int flow, initial_flow;
+  pedge opposite;
 };
 
-int max_flow(int s, int t, vector<pnode> &g) {
-  for (auto u : g) {
-    for (auto e : u->edges) e->r = e->c;
-  }
-
-  int result = 0;
-  while (true) {
-    for (auto u : g) u->visited = false;
-    queue<pnode> q;
-    q.push(g[s]); g[s]->visited = true;
-
-    while (!q.empty()) {
-      auto u = q.front(); q.pop();
-      if (u == g[t]) break;
-      for (auto e : u->edges) {
-        auto v = e->to;
-        if (v->visited || e->r == 0) continue;
-        q.push(v); v->visited = true;
-        v->back = e;
-      }
-    }
-
-    if (!g[t]->visited) break;
-
-    auto e = g[t]->back;
-    int f = INF;
-    while (true) {
-      f = min(f, e->r);
-      if (e->from == g[s]) break;
-      e = e->from->back;
-    }
-
-    result += f;
-
-    e = g[t]->back;
-    while (true) {
-      e->r -= f;
-      e->opp->r += f;
-      if (e->from == g[s]) break;
-      e = e->from->back;
-    }
-  }
-
-  return result;
+int adjust(pedge e, int d) {
+  if (!e) return d;
+  d = adjust(e->from->back, min(d, e->flow));
+  e->flow -= d;
+  e->opposite->flow += d;
+  return d;
 }
 
-int main() {
-  int tcc;
-  cin >> tcc;
-  while (tcc--) {
-    int n;
-    double d;
-    cin >> n >> d;
-    ++n;
-    vector<pnode> g(n); // g[0] - source
-    for (int i = 0; i < n; ++i) g[i] = make_shared<node>();
+void connect(pnode &a, pnode &b, int w) {
+  pedge ea = make_shared<edge>();
+  pedge eb = make_shared<edge>();
+  ea->from = a; ea->to = b; ea->initial_flow = w; ea->opposite = eb;
+  eb->from = b; eb->to = a; eb->initial_flow = 0; eb->opposite = ea;
+  a->adjusted.emplace_back(ea);
+  b->adjusted.emplace_back(eb);
+}
 
-    int total = 0;
-    for (int i = 1; i < n; ++i) {
-      int k;
-      cin >> g[i]->x >> g[i]->y >> k >> g[i]->c;
-      total += k;
-      pedge a = make_shared<edge>();
-      pedge b = make_shared<edge>();
-      a->from = g[0]; a->c = k; a->to = g[i]; a->opp = b;
-      g[0]->edges.push_back(a);
-      b->from = g[i]; b->c = 0; b->to = g[0]; b->opp = a;
-      g[i]->edges.push_back(b);
-    }
-
-    for (int i = 1; i < n; ++i)
-    for (int j = i + 1; j < n; ++j) {
-      double q = pow(pow(g[i]->x - g[j]->x, 2)
-                   + pow(g[i]->y - g[j]->y, 2), 0.5);
-      if (q > d) continue;
-      pedge a = make_shared<edge>();
-      pedge b = make_shared<edge>();
-      a->from = g[i]; a->c = g[i]->c; a->to = g[j]; a->opp = b;
-      g[i]->edges.push_back(a);
-      b->from = g[j]; b->c = g[j]->c; b->to = g[i]; b->opp = a;
-      g[j]->edges.push_back(b);
-    }
-
-    vi v;
-    for (int i = 1; i < n; ++i) {
-      if (max_flow(0, i, g) == total) v.push_back(i);
-    }
-
-    if (v.empty()) {
-      printf("-1\n");
-    } else {
-      printf("%d", v[0] - 1);
-      for (int i = 1; i < v.size(); ++i) {
-        printf(" %d", v[i] - 1);
+int max_flow(vector<pnode> &g, pnode &source, pnode &sink) {
+  int result = 0;
+  for (auto& u : g)
+    for (auto& e : u->adjusted)
+      e->flow = e->initial_flow;
+  while (true) {
+    for (auto u : g) u->age = 0;
+    queue<pnode> q;
+    q.push(source); source->age = 1;
+    while (!(q.empty() || sink->age != 0)) {
+      auto u = q.front(); q.pop();
+      for (auto e : u->adjusted) {
+        auto v = e->to;
+        if (v->age != 0 || e->flow == 0) continue;
+        v->back = e;
+        v->age = u->age + 1;
+        q.push(v);
       }
-      printf("\n");
+    }
+    if (sink->age == 0) break;
+    for (auto e : sink->adjusted) {
+      auto o = e->opposite;
+      if (o->from->age != sink->age - 1 || o->flow == 0) continue;
+      result += adjust(o, o->flow);
+    }
+  }
+  return result;
+}
+// ^ max flow
+
+int main() {
+  ios_base::sync_with_stdio(false); cin.tie(0);
+  l tcc; cin >> tcc;
+  for (l tc = 1; tc <= tcc; tc++) {
+    l n; double d; cin >> n >> d;
+    l dd = ceil(d * d);
+    graph in(n), out(n), g;
+    pnode source = make_shared<node>();
+    g.emplace_back(source);
+    for (l i = 0; i < n; i++) {
+      in[i] = make_shared<node>();
+      out[i] = make_shared<node>();
+      g.emplace_back(in[i]);
+      g.emplace_back(out[i]);
+    }
+    l total = 0;
+    for (l i = 0; i < n; i++) {
+      cin >> in[i]->x >> in[i]->y;
+      l j, k; cin >> j >> k;
+      total += j;
+      connect(source, in[i], j);
+      connect(in[i], out[i], k);
+    }
+    for (l i = 0; i < n; i++) {
+      for (l j = 0; j < n; j++) {
+        if (i == j) continue; // TODO remove
+        l dx = in[i]->x - in[j]->x;
+        l dy = in[i]->y - in[j]->y;
+        if (dx * dx + dy * dy > dd) continue;
+        connect(out[i], in[j], total);
+      }
+    }
+    vl answers;
+    for (l i = 0; i < n; i++) {
+      if (max_flow(g, source, in[i]) == total) {
+        answers.emplace_back(i);
+      }
+    }
+    if (answers.empty()) {
+      cout << "-1" << endl;
+    } else {
+      bool first = true;
+      for (auto i : answers) {
+        if (!first) cout << " ";
+        first = false;
+        cout << i;
+      }
+      cout << endl;
     }
   }
 }
