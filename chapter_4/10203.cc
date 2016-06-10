@@ -43,7 +43,7 @@ int main() {
       ss >> x1 >> y1 >> x2 >> y2;
       d += pow(pow(x1 - x2, 2) + pow(y1 - y2, 2), 0.5);
     }
-    int mins = ceil(d * 2 * 60 / 20000);
+    int mins = round(d * 2 * 60 / 20000);
     printf("%d:%02d\n", mins / 60, mins % 60);
     if (tcc) printf("\n");
   }
